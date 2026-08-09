@@ -13,8 +13,10 @@ import { pageHead } from '@/lib/matcha/seo';
 import { m } from '@/paraglide/messages.js';
 import { getLocale } from '@/paraglide/runtime.js';
 import { Examples } from '@/blocks/matcha/examples';
+import { RecoveryBoundary } from '@/blocks/matcha/recovery-boundary';
 import { MatchaFooter, MatchaHeader } from '@/blocks/matcha/site-chrome';
 import { ToolSection } from '@/blocks/matcha/tool-section';
+import { InlineCta } from '@/components/matcha/article';
 import { FaqList } from '@/components/matcha/faq-list';
 import { LinkCards } from '@/components/matcha/link-cards';
 import {
@@ -30,6 +32,7 @@ function faqItems(locale?: ReturnType<typeof getLocale>) {
     { question: m['photo.faq_q1']({}, o), answer: m['photo.faq_a1']({}, o) },
     { question: m['photo.faq_q2']({}, o), answer: m['photo.faq_a2']({}, o) },
     { question: m['photo.faq_q3']({}, o), answer: m['photo.faq_a3']({}, o) },
+    { question: m['photo.faq_q4']({}, o), answer: m['photo.faq_a4']({}, o) },
     { question: m['home.faq_q1']({}, o), answer: m['home.faq_a1']({}, o) },
     { question: m['home.faq_q2']({}, o), answer: m['home.faq_a2']({}, o) },
   ];
@@ -54,11 +57,7 @@ function FromPhotoPage() {
 
         <Examples />
 
-        <ProseSection
-          title={m['home.expect_honest_title']()}
-          paragraphs={[m['home.expect_honest_body']()]}
-          tone="muted"
-        />
+        <RecoveryBoundary tone="muted" />
 
         <ProseSection id="how-it-works" title={m['home.how_title']()}>
           <StepList
@@ -76,9 +75,29 @@ function FromPhotoPage() {
             m['photo.intent_line'](),
             m['photo.body_1'](),
             m['photo.body_2'](),
+            m['photo.body_3'](),
           ]}
           tone="muted"
         />
+
+        <ProseSection title={m['photo.workflow_title']()}>
+          <StepList
+            steps={[
+              {
+                title: m['photo.workflow_1_title'](),
+                body: m['photo.workflow_1_body'](),
+              },
+              {
+                title: m['photo.workflow_2_title'](),
+                body: m['photo.workflow_2_body'](),
+              },
+              {
+                title: m['photo.workflow_3_title'](),
+                body: m['photo.workflow_3_body'](),
+              },
+            ]}
+          />
+        </ProseSection>
 
         <ProseSection title={m['photo.tips_title']()}>
           <TipList
@@ -88,6 +107,10 @@ function FromPhotoPage() {
               m['photo.tip_3'](),
               m['photo.tip_4'](),
             ]}
+          />
+          <InlineCta
+            href="/how-to-remove-matcha-filter"
+            label={m['photo.guide_cta']()}
           />
         </ProseSection>
 
@@ -103,10 +126,10 @@ function FromPhotoPage() {
               cta: m['home.paths_video_cta'](),
             },
             {
-              href: '/',
-              title: m['home.h1'](),
-              body: m['home.expect_body'](),
-              cta: m['home.paths_photo_cta'](),
+              href: '/matcha-filter-trend',
+              title: m['home.trend_card_title'](),
+              body: m['home.trend_card_body'](),
+              cta: m['home.trend_card_cta'](),
             },
           ]}
         />
@@ -142,7 +165,7 @@ export const Route = createFileRoute('/from-photo')({
               organizationSchema(),
               websiteSchema(),
               webApplicationSchema(webAppFeatures),
-              breadcrumbSchema(loaderData.crumbs),
+              breadcrumbSchema(loaderData.crumbs, loaderData.locale),
               faqSchema(loaderData.faq),
             ]),
           ],

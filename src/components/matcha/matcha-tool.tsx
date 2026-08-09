@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  BookOpen,
+  Check,
   CheckCircle2,
   Download,
   Loader2,
   RotateCcw,
+  Share2,
   ShieldCheck,
 } from 'lucide-react';
 
+import { Link } from '@/core/i18n/navigation';
 import {
   analyzeFrame,
   clampParams,
@@ -121,6 +125,9 @@ export interface MatchaToolCopy {
   successBody: string;
   chooseAnother: string;
   localBadge: string;
+  guideLabel: string;
+  shareLabel: string;
+  copiedLabel: string;
 }
 
 export function MatchaTool({
@@ -147,6 +154,7 @@ export function MatchaTool({
   // What the last export actually contained, read back from the recorder.
   const [exportedAudio, setExportedAudio] = useState<boolean | null>(null);
   const [exportedType, setExportedType] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<MatchaRenderer | null>(null);
@@ -300,6 +308,22 @@ export function MatchaTool({
     setError(null);
   }
 
+  function handleChooseAnother() {
+    const current = mediaRef.current;
+    rendererRef.current?.dispose();
+    rendererRef.current = null;
+    if (current) {
+      releaseSourceAudio(current.element as HTMLMediaElement);
+      URL.revokeObjectURL(current.url);
+    }
+    setMedia(null);
+    setStats(null);
+    setSucceeded(false);
+    setExportedAudio(null);
+    setExportedType(null);
+    setError(null);
+  }
+
   function handleReset() {
     setParams(DEFAULT_PRESET);
     setSucceeded(false);
@@ -328,6 +352,44 @@ export function MatchaTool({
       setExporting(false);
       setExportProgress(null);
     }
+  }
+
+  async function handleShare() {
+    const url = `${window.location.origin}${window.location.pathname}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: document.title, url });
+        return;
+      } catch (thrown) {
+        if (thrown instanceof DOMException && thrown.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    let copied = false;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch {
+        // Clipboard permissions vary by browser and embedding context. The
+        // selection fallback below still works from this direct button click.
+      }
+    }
+    if (!copied) {
+      const field = document.createElement('textarea');
+      field.value = url;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.appendChild(field);
+      field.select();
+      document.execCommand('copy');
+      field.remove();
+    }
+    setShareCopied(true);
+    window.setTimeout(() => setShareCopied(false), 2_000);
   }
 
   /** Realtime capture: play the clip start-to-finish while recording. */
@@ -479,7 +541,7 @@ export function MatchaTool({
         <div
           role="status"
           aria-live="polite"
-          className="border-border bg-card flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+          className="border-border bg-card flex flex-col gap-4 rounded-xl border px-4 py-4"
         >
           <div className="flex items-start gap-3 text-sm">
             <CheckCircle2 className="text-foreground mt-0.5 size-4 shrink-0" />
@@ -498,16 +560,34 @@ export function MatchaTool({
               )}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setSucceeded(false);
-              handleModeChange(mode === 'photo' ? 'video' : 'photo');
-            }}
-            className="border-border hover:bg-accent inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors"
-          >
-            {copy.chooseAnother}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/how-to-remove-matcha-filter"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors"
+            >
+              <BookOpen className="size-4" />
+              {copy.guideLabel}
+            </Link>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="border-border hover:bg-accent inline-flex min-h-10 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors"
+            >
+              {shareCopied ? (
+                <Check className="size-4" />
+              ) : (
+                <Share2 className="size-4" />
+              )}
+              {shareCopied ? copy.copiedLabel : copy.shareLabel}
+            </button>
+            <button
+              type="button"
+              onClick={handleChooseAnother}
+              className="border-border hover:bg-accent inline-flex min-h-10 items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors"
+            >
+              {copy.chooseAnother}
+            </button>
+          </div>
         </div>
       )}
 

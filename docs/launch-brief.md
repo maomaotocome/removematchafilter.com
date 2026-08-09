@@ -8,7 +8,8 @@
 
 - **Name:** Remove Matcha Filter
 - **Production domain:** `https://removematchafilter.com`
-- **Launch language:** English
+- **Primary search language:** English, with complete Chinese versions of all
+  core SEO pages through the existing locale routing
 - **Stack:** the current ShipAny TanStack repository
 - **Deployment target:** Cloudflare Workers through the repository's `/deploy-cloudflare` skill
 
@@ -52,6 +53,8 @@ Forbidden:
 | `/` | `remove matcha filter` | Main tool; covers photo and video | Photo and Video entry points |
 | `/from-video` | `remove matcha filter from video` | Video workflow, limitations, compatibility and export | Video |
 | `/from-photo` | `remove matcha filter from photo` | Photo workflow, comparison, formats and download | Photo |
+| `/matcha-filter-trend` | `matcha filter trend` | Explain the trend, visual layers and recovery boundary | None |
+| `/how-to-remove-matcha-filter` | `how to remove matcha filter` | Complete task-oriented photo and video guide | None |
 | `/privacy-policy` | Trust/legal | Explain real file, analytics and cookie behavior | None |
 | `/terms-of-service` | Trust/legal | Usage rules, limitations and user responsibility | None |
 | `/contact` | Trust | Real support and feedback route | None |
@@ -104,21 +107,21 @@ All three public tool pages must reuse one core tool implementation. Do not copy
 ### Homepage
 
 - **Title:** `Remove Matcha Filter Online – Free Photo & Video Tool`
-- **H1:** `Remove the Matcha Filter from Photos and Videos`
+- **H1:** `Remove Matcha Filter from Photos and Videos`
 - **Description:** `Reduce the Matcha filter effect in your browser. Adjust color, noise and detail, preview the result, and export—no upload required.`
 - **Canonical:** `https://removematchafilter.com/`
 
 ### Video page
 
 - **Title:** `Remove Matcha Filter from Video Online – Free Tool`
-- **H1:** `Remove the Matcha Filter from a Video`
+- **H1:** `Remove Matcha Filter from a Video`
 - **Description:** `Adjust the Matcha filter look in a video locally in your browser. Preview color, noise and detail changes, then export your result.`
 - **Canonical:** `https://removematchafilter.com/from-video`
 
 ### Photo page
 
 - **Title:** `Remove Matcha Filter from Photo Online – Free Tool`
-- **H1:** `Remove the Matcha Filter from a Photo`
+- **H1:** `Remove Matcha Filter from a Photo`
 - **Description:** `Reduce the Matcha filter look in a photo for free. Adjust color, noise and detail in your browser, compare the result, and download it.`
 - **Canonical:** `https://removematchafilter.com/from-photo`
 
@@ -126,12 +129,16 @@ All three public tool pages must reuse one core tool implementation. Do not copy
 
 - Each tool page needs unique, intent-specific server-rendered copy.
 - Each indexable page needs an accurate title, description, H1 and self-referencing canonical.
+- Each public page needs route-correct English, Chinese and `x-default`
+  `hreflang` alternates; an alternate must never point to a different page's
+  topic.
 - Each canonical must be the final non-redirecting URL returned by the current router. Do not force trailing slashes when the repository redirects them away.
 - Use the current repository's metadata, sitemap, robots, Open Graph, i18n and file-route patterns.
 - The three tool pages must link to each other with useful anchor text.
 - Do not target a fixed word count or keyword density.
 - Do not promise FAQ or HowTo rich results.
-- Do not publish blank, placeholder or English-copy locale pages.
+- Do not publish blank, placeholder or English-copy locale pages. Every new
+  core SEO route must ship in English and Chinese together.
 
 ## 6. Page structure
 
@@ -203,6 +210,8 @@ The P0 is complete only when all items pass:
 - [ ] Page content and browser claims match tested behavior.
 - [ ] No user media is uploaded, verified through browser network inspection.
 - [ ] All three tool pages have unique intent content and correct metadata/canonical.
+- [ ] The trend and how-to pages have complete English and Chinese content,
+      correct metadata/canonical/hreflang and matching visible/structured data.
 - [ ] Privacy, Terms and Contact exist and reflect real behavior.
 - [ ] `VITE_CONTACT_EMAIL` resolves to a real monitored inbox; no placeholder contact notice remains in production.
 - [ ] Mobile layout has no blocking overflow and the core action is usable.

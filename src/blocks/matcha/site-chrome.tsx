@@ -14,8 +14,14 @@ export function MatchaHeader() {
       navLinks={[
         { href: '/from-photo', label: m['landing.nav.photo']() },
         { href: '/from-video', label: m['landing.nav.video']() },
-        { href: '/#how-it-works', label: m['landing.nav.how']() },
-        { href: '/#faq', label: m['landing.nav.faq']() },
+        {
+          href: '/how-to-remove-matcha-filter',
+          label: m['landing.nav.guide'](),
+        },
+        {
+          href: '/matcha-filter-trend',
+          label: m['landing.nav.trend'](),
+        },
       ]}
     />
   );
@@ -39,7 +45,14 @@ export function MatchaFooter() {
     {
       title: m['site.footer.learn'](),
       links: [
-        { label: m['site.footer.how'](), href: '/#how-it-works' },
+        {
+          label: m['site.footer.guide'](),
+          href: '/how-to-remove-matcha-filter',
+        },
+        {
+          label: m['site.footer.trend'](),
+          href: '/matcha-filter-trend',
+        },
         { label: m['site.footer.faq'](), href: '/#faq' },
       ],
     },

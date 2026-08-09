@@ -12,8 +12,10 @@ import { pageHead } from '@/lib/matcha/seo';
 import { m } from '@/paraglide/messages.js';
 import { getLocale } from '@/paraglide/runtime.js';
 import { Examples } from '@/blocks/matcha/examples';
+import { RecoveryBoundary } from '@/blocks/matcha/recovery-boundary';
 import { MatchaFooter, MatchaHeader } from '@/blocks/matcha/site-chrome';
 import { ToolSection } from '@/blocks/matcha/tool-section';
+import { InlineCta } from '@/components/matcha/article';
 import { FaqList } from '@/components/matcha/faq-list';
 import { LinkCards } from '@/components/matcha/link-cards';
 import { ProseSection, StepList } from '@/components/matcha/prose-section';
@@ -33,6 +35,7 @@ function faqItems(locale?: ReturnType<typeof getLocale>) {
     { question: m['home.faq_q4']({}, o), answer: m['home.faq_a4']({}, o) },
     { question: m['home.faq_q5']({}, o), answer: m['home.faq_a5']({}, o) },
     { question: m['home.faq_q6']({}, o), answer: m['home.faq_a6']({}, o) },
+    { question: m['home.faq_q7']({}, o), answer: m['home.faq_a7']({}, o) },
   ];
 }
 
@@ -50,22 +53,22 @@ function HomePage() {
 
         <Examples />
 
+        <RecoveryBoundary tone="muted" />
+
         <ProseSection
-          title={m['home.expect_title']()}
-          paragraphs={[m['home.expect_body']()]}
-          tone="muted"
+          title={m['home.trend_title']()}
+          paragraphs={[m['home.trend_body_1'](), m['home.trend_body_2']()]}
         >
-          <h3 className="pt-4 text-lg font-medium">
-            {m['home.expect_honest_title']()}
-          </h3>
-          <p className="text-muted-foreground text-[15px] leading-7">
-            {m['home.expect_honest_body']()}
-          </p>
+          <InlineCta
+            href="/matcha-filter-trend"
+            label={m['home.trend_link']()}
+          />
         </ProseSection>
 
         <ProseSection
           title={m['home.naming_title']()}
-          paragraphs={[m['home.naming_body']()]}
+          paragraphs={[m['home.naming_body'](), m['home.naming_body_2']()]}
+          tone="muted"
         />
 
         {/* Two adjacent untinted sections need a divider; tone="muted" blocks
@@ -118,6 +121,24 @@ function HomePage() {
         />
 
         <FaqList id="faq" title={m['home.faq_title']()} items={faqItems()} />
+
+        <LinkCards
+          title={m['home.learn_title']()}
+          cards={[
+            {
+              href: '/how-to-remove-matcha-filter',
+              title: m['home.guide_card_title'](),
+              body: m['home.guide_card_body'](),
+              cta: m['home.guide_card_cta'](),
+            },
+            {
+              href: '/matcha-filter-trend',
+              title: m['home.trend_card_title'](),
+              body: m['home.trend_card_body'](),
+              cta: m['home.trend_card_cta'](),
+            },
+          ]}
+        />
       </main>
       <MatchaFooter />
     </div>

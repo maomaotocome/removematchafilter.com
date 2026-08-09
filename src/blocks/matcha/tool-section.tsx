@@ -1,4 +1,4 @@
-import { ShieldCheck } from 'lucide-react';
+import { Check, ShieldCheck } from 'lucide-react';
 
 import type { MediaMode } from '@/lib/matcha';
 import { m } from '@/paraglide/messages.js';
@@ -22,6 +22,9 @@ export function toolCopy(chooseFile?: string): MatchaToolCopy {
     successBody: m['tool.success_body'](),
     chooseAnother: m['tool.choose_another'](),
     localBadge: m['tool.local_badge'](),
+    guideLabel: m['tool.after_export_guide'](),
+    shareLabel: m['tool.after_export_share'](),
+    copiedLabel: m['tool.after_export_copied'](),
     modePhoto: m['tool.mode_photo'](),
     modeVideo: m['tool.mode_video'](),
     dropPhotoTitle: m['tool.drop_photo_title'](),
@@ -99,10 +102,21 @@ export function ToolSection({
           </p>
           {/* §4.1: privacy signal must be visible without scrolling. Given a
               real chip so it reads as a guarantee, not a caption. */}
-          <p className="border-border/70 bg-card/60 text-foreground/80 mt-4 inline-flex items-center gap-2 rounded-full border py-1.5 pr-3.5 pl-3 text-[13px] font-medium sm:mt-5">
-            <ShieldCheck className="size-3.5" strokeWidth={2.25} />
-            {m['tool.local_badge']()}
-          </p>
+          <ul className="mt-4 flex flex-wrap gap-2 sm:mt-5">
+            {[
+              { label: m['tool.trust_free'](), icon: Check },
+              { label: m['tool.trust_no_account'](), icon: Check },
+              { label: m['tool.local_badge'](), icon: ShieldCheck },
+            ].map((item) => (
+              <li
+                key={item.label}
+                className="border-border/70 bg-card/60 text-foreground/80 inline-flex items-center gap-2 rounded-full border py-1.5 pr-3.5 pl-3 text-[13px] font-medium"
+              >
+                <item.icon className="size-3.5" strokeWidth={2.25} />
+                {item.label}
+              </li>
+            ))}
+          </ul>
         </div>
         <MatchaTool defaultMode={defaultMode} copy={toolCopy(chooseFile)} />
       </div>

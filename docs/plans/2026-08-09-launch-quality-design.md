@@ -46,8 +46,10 @@ boundary, and search intent immediately clear.
 
 ## Search and production acceptance
 
-- Preserve the approved titles, descriptions, H1s, canonicals, sitemap, robots,
-  structured data, and internal links from `docs/launch-brief.md`.
+- Preserve the approved titles, descriptions, canonicals, sitemap, robots,
+  structured data, and internal links from `docs/launch-brief.md`. H1 wording
+  follows the later approved SEO growth design where it supersedes the original
+  article-bearing copy.
 - Run the complete responsive, theme, SEO, performance, and security launch
   audit; fix all blocking findings.
 - Require production build, functional tool QA, launch checks, and security

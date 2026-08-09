@@ -201,6 +201,14 @@ try {
     viewport: { width: 1440, height: 1000 },
   });
   const page = await context.newPage();
+  // Exercise the deterministic copy-link fallback. Native share sheets are
+  // operating-system UI and cannot be asserted from headless Chromium.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: undefined,
+    });
+  });
   const consoleErrors = [];
   const suspiciousMediaTransfers = [];
   const leakedFileNames = [];
@@ -353,6 +361,28 @@ try {
       statSync(photoPath).size > 1000,
     `${photoDownload.suggestedFilename()} (${statSync(photoPath).size} B)`
   );
+
+  record(
+    'success state offers the complete guide',
+    await page
+      .getByRole('link', { name: 'Improve the result' })
+      .isVisible()
+      .catch(() => false)
+  );
+  const shareButton = page.getByRole('button', { name: 'Share this tool' });
+  const shareVisible = await shareButton.isVisible().catch(() => false);
+  record('success state offers a share action', shareVisible);
+  if (shareVisible) {
+    await shareButton.click();
+    await page.waitForTimeout(200);
+    record(
+      'share action completes or copies the canonical page URL',
+      await page
+        .getByRole('button', { name: 'Link copied' })
+        .isVisible()
+        .catch(() => false)
+    );
+  }
 
   // --- 5. Unsupported file type shows a real error ---
   await page.getByRole('button', { name: 'Switch mode' }).click();
@@ -612,10 +642,8 @@ try {
           : null;
       if (drift !== null && drift < 0.35) repeatSynced++;
     }
-    // Return to the empty state so the next cycle can pick a file again.
-    await page.getByRole('button', { name: 'Switch mode' }).click();
-    await page.waitForTimeout(250);
-    await page.getByRole('button', { name: 'Video' }).click();
+    // Return to the empty state without changing the selected Video mode.
+    await page.getByRole('button', { name: 'Choose another file' }).click();
     await page.waitForTimeout(400);
   }
   record(

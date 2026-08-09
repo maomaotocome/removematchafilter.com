@@ -73,9 +73,8 @@ export default defineConfig({
       outputStructure: 'message-modules',
       cookieName: 'PARAGLIDE_LOCALE',
       strategy: ['url', 'cookie', 'baseLocale'],
-      // English-only launch: one unprefixed locale. Adding a locale back means
-      // adding it to project.inlang/settings.json and giving it a `localized`
-      // entry here (e.g. ['zh', '/zh/:path(.*)?']) — the machinery is intact.
+      // English stays unprefixed; Chinese uses /zh. API endpoints remain
+      // locale-free because client data calls use stable /api paths.
       urlPatterns: [
         // API endpoints are never locale-prefixed.
         {
@@ -85,11 +84,17 @@ export default defineConfig({
         // Bare locale home matches without a trailing-slash redirect.
         {
           pattern: '/',
-          localized: [['en', '/']],
+          localized: [
+            ['zh', '/zh'],
+            ['en', '/'],
+          ],
         },
         {
           pattern: '/:path(.*)?',
-          localized: [['en', '/:path(.*)?']],
+          localized: [
+            ['zh', '/zh/:path(.*)?'],
+            ['en', '/:path(.*)?'],
+          ],
         },
       ],
     }),

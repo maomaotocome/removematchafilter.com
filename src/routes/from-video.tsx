@@ -13,8 +13,10 @@ import { pageHead } from '@/lib/matcha/seo';
 import { m } from '@/paraglide/messages.js';
 import { getLocale } from '@/paraglide/runtime.js';
 import { Examples } from '@/blocks/matcha/examples';
+import { RecoveryBoundary } from '@/blocks/matcha/recovery-boundary';
 import { MatchaFooter, MatchaHeader } from '@/blocks/matcha/site-chrome';
 import { ToolSection } from '@/blocks/matcha/tool-section';
+import { InlineCta } from '@/components/matcha/article';
 import { FaqList } from '@/components/matcha/faq-list';
 import { LinkCards } from '@/components/matcha/link-cards';
 import {
@@ -56,11 +58,7 @@ function FromVideoPage() {
 
         <Examples />
 
-        <ProseSection
-          title={m['home.expect_honest_title']()}
-          paragraphs={[m['home.expect_honest_body']()]}
-          tone="muted"
-        />
+        <RecoveryBoundary tone="muted" />
 
         <ProseSection id="how-it-works" title={m['home.how_title']()}>
           <StepList
@@ -78,9 +76,20 @@ function FromVideoPage() {
             m['video.intent_line'](),
             m['video.body_1'](),
             m['video.body_2'](),
+            m['video.body_3'](),
           ]}
           tone="muted"
         />
+
+        <ProseSection
+          title={m['video.tiktok_title']()}
+          paragraphs={[m['video.tiktok_body_1'](), m['video.tiktok_body_2']()]}
+        >
+          <InlineCta
+            href="/how-to-remove-matcha-filter"
+            label={m['video.guide_cta']()}
+          />
+        </ProseSection>
 
         <ProseSection title={m['video.export_title']()}>
           <TipList
@@ -94,7 +103,12 @@ function FromVideoPage() {
 
         <ProseSection title={m['video.tips_title']()} tone="muted">
           <TipList
-            tips={[m['video.tip_1'](), m['video.tip_2'](), m['video.tip_3']()]}
+            tips={[
+              m['video.tip_1'](),
+              m['video.tip_2'](),
+              m['video.tip_3'](),
+              m['video.tip_4'](),
+            ]}
           />
         </ProseSection>
 
@@ -110,10 +124,10 @@ function FromVideoPage() {
               cta: m['home.paths_photo_cta'](),
             },
             {
-              href: '/',
-              title: m['home.h1'](),
-              body: m['home.expect_body'](),
-              cta: m['home.paths_video_cta'](),
+              href: '/matcha-filter-trend',
+              title: m['home.trend_card_title'](),
+              body: m['home.trend_card_body'](),
+              cta: m['home.trend_card_cta'](),
             },
           ]}
         />
@@ -149,7 +163,7 @@ export const Route = createFileRoute('/from-video')({
               organizationSchema(),
               websiteSchema(),
               webApplicationSchema(webAppFeatures),
-              breadcrumbSchema(loaderData.crumbs),
+              breadcrumbSchema(loaderData.crumbs, loaderData.locale),
               faqSchema(loaderData.faq),
             ]),
           ],

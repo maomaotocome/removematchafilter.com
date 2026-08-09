@@ -10,6 +10,8 @@ const STATIC_PATHS = [
   '',
   '/from-photo',
   '/from-video',
+  '/matcha-filter-trend',
+  '/how-to-remove-matcha-filter',
   '/contact',
   '/privacy-policy',
   '/terms-of-service',
@@ -58,7 +60,15 @@ export const Route = createFileRoute('/sitemap.xml')({
         const entries: Entry[] = STATIC_PATHS.map((path) => ({
           path,
           changeFrequency: 'weekly',
-          priority: path === '' ? 1 : path.startsWith('/from-') ? 0.9 : 0.5,
+          priority:
+            path === ''
+              ? 1
+              : path.startsWith('/from-')
+                ? 0.9
+                : path === '/matcha-filter-trend' ||
+                    path === '/how-to-remove-matcha-filter'
+                  ? 0.8
+                  : 0.5,
         }));
 
         const xml = [

@@ -1,5 +1,5 @@
 import { envConfigs } from '@/config';
-import { baseLocale, localizeUrl } from '@/paraglide/runtime.js';
+import { baseLocale, locales, localizeUrl } from '@/paraglide/runtime.js';
 
 /**
  * Build per-page metadata: title, description, self-referencing canonical, and
@@ -30,6 +30,16 @@ export function pageHead({
     locale: locale as typeof baseLocale,
   }).href;
   const imageUrl = `${envConfigs.app_url.replace(/\/+$/, '')}${OG_IMAGE}`;
+  const alternates = locales.map((alternateLocale) => ({
+    rel: 'alternate',
+    hrefLang: alternateLocale,
+    href: localizeUrl(`${envConfigs.app_url}${path}`, {
+      locale: alternateLocale,
+    }).href,
+  }));
+  const defaultHref = localizeUrl(`${envConfigs.app_url}${path}`, {
+    locale: baseLocale,
+  }).href;
 
   return {
     meta: [
@@ -53,7 +63,11 @@ export function pageHead({
       { name: 'twitter:description', content: description },
       { name: 'twitter:image', content: imageUrl },
     ],
-    links: [{ rel: 'canonical', href: canonical }],
+    links: [
+      { rel: 'canonical', href: canonical },
+      ...alternates,
+      { rel: 'alternate', hrefLang: 'x-default', href: defaultHref },
+    ],
     ...(scripts ? { scripts } : {}),
   };
 }

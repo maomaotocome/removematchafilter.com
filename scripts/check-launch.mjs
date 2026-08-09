@@ -108,6 +108,8 @@ if (!authSecret) {
 const canonicalPaths = [
   '/from-photo',
   '/from-video',
+  '/matcha-filter-trend',
+  '/how-to-remove-matcha-filter',
   '/contact',
   '/privacy-policy',
   '/terms-of-service',

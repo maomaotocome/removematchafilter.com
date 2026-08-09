@@ -1,4 +1,5 @@
 import { envConfigs } from '@/config';
+import { baseLocale, localizeUrl } from '@/paraglide/runtime.js';
 
 /**
  * JSON-LD builders.
@@ -32,7 +33,7 @@ export function websiteSchema() {
     name: envConfigs.app_name,
     url: `${origin()}/`,
     publisher: { '@id': `${origin()}/#organization` },
-    inLanguage: 'en',
+    inLanguage: ['en', 'zh'],
   };
 }
 
@@ -75,14 +76,90 @@ export function webApplicationSchema(featureList: string[]) {
   };
 }
 
-export function breadcrumbSchema(trail: { name: string; path: string }[]) {
+export function breadcrumbSchema(
+  trail: { name: string; path: string }[],
+  locale = baseLocale
+) {
   return {
     '@type': 'BreadcrumbList',
     itemListElement: trail.map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      item: `${origin()}${item.path}`,
+      item: localizeUrl(`${origin()}${item.path}`, {
+        locale: locale as typeof baseLocale,
+      }).href,
+    })),
+  };
+}
+
+export function articleSchema({
+  path,
+  headline,
+  description,
+  locale = baseLocale,
+  datePublished,
+  dateModified = datePublished,
+}: {
+  path: string;
+  headline: string;
+  description: string;
+  locale?: string;
+  datePublished: string;
+  dateModified?: string;
+}) {
+  const url = localizeUrl(`${origin()}${path}`, {
+    locale: locale as typeof baseLocale,
+  }).href;
+  return {
+    '@type': 'Article',
+    '@id': `${url}#article`,
+    headline,
+    description,
+    url,
+    mainEntityOfPage: url,
+    datePublished,
+    dateModified,
+    inLanguage: locale,
+    author: { '@id': `${origin()}/#organization` },
+    publisher: { '@id': `${origin()}/#organization` },
+    image: `${origin()}/imgs/og-cover.png`,
+  };
+}
+
+export function howToSchema({
+  path,
+  name,
+  description,
+  steps,
+  tools,
+  locale = baseLocale,
+}: {
+  path: string;
+  name: string;
+  description: string;
+  steps: { name: string; text: string }[];
+  tools: string[];
+  locale?: string;
+}) {
+  const url = localizeUrl(`${origin()}${path}`, {
+    locale: locale as typeof baseLocale,
+  }).href;
+  return {
+    '@type': 'HowTo',
+    '@id': `${url}#howto`,
+    name,
+    description,
+    url,
+    inLanguage: locale,
+    totalTime: 'PT5M',
+    tool: tools.map((tool) => ({ '@type': 'HowToTool', name: tool })),
+    step: steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.name,
+      text: step.text,
+      url: `${url}#step-${index + 1}`,
     })),
   };
 }
