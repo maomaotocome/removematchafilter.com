@@ -11,13 +11,22 @@ export function Plausible({
   domain?: string;
   src?: string;
 }) {
-  if (!src) return null;
+  let safeSrc = '';
+  try {
+    const parsed = new URL(src);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      safeSrc = parsed.href;
+    }
+  } catch {
+    // Invalid or relative analytics URLs are not executable configuration.
+  }
+  if (!safeSrc) return null;
   return (
     <>
       <script
         id="plausible-loader"
         data-domain={domain || undefined}
-        src={src}
+        src={safeSrc}
         async
       />
       <script

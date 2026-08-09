@@ -3,11 +3,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Font families — loaded via @fontsource imports (Inter, Libre Baskerville)
-   and a Google Fonts <link> (Noto Serif SC) in src/routes/__root.tsx.
-   These variables were previously injected by next/font. */
+/* The display face is self-hosted. Body copy uses the platform UI stack to
+   avoid a second render-blocking font on the conversion-critical first view. */
 :root {
-  --font-sans: 'Inter Variable', 'Inter', sans-serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-serif-display: 'Libre Baskerville', serif;
 }
 
@@ -44,6 +44,18 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* Editorial type scale. Fluid between the mobile and desktop ends so
+     headings never sit at an awkward intermediate size, and every step is a
+     real jump (>=20%) rather than a timid one. */
+  --text-display: clamp(2.5rem, 1.75rem + 3.2vw, 4rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.025em;
+  --text-title: clamp(1.875rem, 1.45rem + 1.6vw, 2.625rem);
+  --text-title--line-height: 1.12;
+  --text-title--letter-spacing: -0.02em;
+  --text-lede: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-lede--line-height: 1.65;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -138,6 +150,73 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Editorial defaults: optical sizing and real kerning/ligatures make the
+       serif display face read as typeset rather than merely styled. */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
+  }
+
+  /* The serif display face is set tight and optically corrected. Libre
+     Baskerville runs large for its point size, so headings need negative
+     tracking to avoid looking loose next to Inter body copy. */
+  .font-serif {
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1,
+      'onum' 1;
+  }
+
+  /* Body copy uses tabular-off proportional numerals, but the tool's readouts
+     need tabular so slider values don't jitter as digits change width. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Headings wrap on meaning rather than on the container edge. Avoids the
+     one-orphan-word last line that makes generated layouts look careless. */
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
+
+@layer components {
+  /* --- Paper grain -------------------------------------------------------
+     A single inline SVG fractal-noise tile at very low opacity. This is the
+     whole reason the off-white reads as paper stock instead of #FAFAF8: it
+     breaks up the large flat fills without adding a downloaded asset or any
+     depicted subject matter. Pure decoration, so aria-hidden at the callsite. */
+  .paper-grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .dark .paper-grain::before {
+    opacity: 0.05;
+  }
+
+  /* --- Section rule -----------------------------------------------------
+     Sections previously butted against each other with only a background
+     change to separate them. A hairline that fades out at both ends divides
+     them without drawing a hard boundary across the page. */
+  .rule-fade {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--border) 15%,
+      var(--border) 85%,
+      transparent
+    );
   }
 
   @keyframes drift-a {

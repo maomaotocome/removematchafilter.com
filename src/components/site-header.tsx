@@ -23,10 +23,58 @@ export interface NavLink {
 /** Off-site URLs render as plain <a>; internal paths use the locale-aware Link. */
 const isExternalHref = (href: string) => /^https?:\/\//.test(href);
 
-export function SiteHeader({ navLinks }: { navLinks?: NavLink[] }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+/**
+ * Account area: the user menu when signed in, the get-started CTA when not.
+ *
+ * This lives in its own component because it owns the `useSession()` call, and
+ * a hook cannot be called conditionally. Keeping it here means a header
+ * rendered with `showCta={false}` never mounts this component and therefore
+ * never fetches `/api/auth/get-session` — purely public pages stay free of an
+ * auth dependency, and an unprovisioned AUTH_SECRET cannot surface a 500 on
+ * them. Callers that do want the CTA get the unchanged behaviour.
+ */
+function HeaderAccountActions({
+  onNavigate,
+  showArrow = false,
+}: {
+  /** Close the mobile menu when the CTA is followed. */
+  onNavigate?: () => void;
+  showArrow?: boolean;
+}) {
   const { data: session } = useSession();
   const user = session?.user;
+
+  if (user) {
+    return (
+      <SiteUserMenu
+        name={user.name || 'User'}
+        email={user.email}
+        image={user.image}
+      />
+    );
+  }
+
+  return (
+    <Link
+      href="/settings"
+      className={cn(buttonVariants(), 'gap-1.5')}
+      onClick={onNavigate}
+    >
+      {m['common.nav.get_started']()}
+      {showArrow && <ArrowRight className="size-4" />}
+    </Link>
+  );
+}
+
+export function SiteHeader({
+  navLinks,
+  showCta = true,
+}: {
+  navLinks?: NavLink[];
+  /** Hide the sign-in / get-started action on purely public surfaces. */
+  showCta?: boolean;
+}) {
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <header className="bg-background/80 sticky top-0 z-50 w-full backdrop-blur-sm">
@@ -68,18 +116,7 @@ export function SiteHeader({ navLinks }: { navLinks?: NavLink[] }) {
         <div className="hidden items-center gap-3 md:flex">
           <LocaleSelector />
           <ThemeToggle />
-          {user ? (
-            <SiteUserMenu
-              name={user.name || 'User'}
-              email={user.email}
-              image={user.image}
-            />
-          ) : (
-            <Link href="/settings" className={cn(buttonVariants(), 'gap-1.5')}>
-              {m['common.nav.get_started']()}
-              <ArrowRight className="size-4" />
-            </Link>
-          )}
+          {showCta && <HeaderAccountActions showArrow />}
         </div>
 
         {/* Mobile toggle */}
@@ -126,20 +163,8 @@ export function SiteHeader({ navLinks }: { navLinks?: NavLink[] }) {
             <LocaleSelector />
             <ThemeToggle />
             <div className="flex-1" />
-            {user ? (
-              <SiteUserMenu
-                name={user.name || 'User'}
-                email={user.email}
-                image={user.image}
-              />
-            ) : (
-              <Link
-                href="/settings"
-                className={cn(buttonVariants(), 'gap-1.5')}
-                onClick={() => setMobileOpen(false)}
-              >
-                {m['common.nav.get_started']()}
-              </Link>
+            {showCta && (
+              <HeaderAccountActions onNavigate={() => setMobileOpen(false)} />
             )}
           </div>
         </div>

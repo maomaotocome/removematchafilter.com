@@ -4,28 +4,38 @@ import { useEffect, useRef } from 'react';
 
 import { getAuthClient, useSession } from '@/core/auth/client';
 import { currentPathWithQuery } from '@/lib/redirect';
-import { usePublicConfig } from '@/hooks/use-public-config';
+import { usePublicConfig, type PublicConfig } from '@/hooks/use-public-config';
 
-// Mounts the Google One Tap prompt for signed-out visitors when the
-// admin has enabled it. Self-contained: pulls config from
-// /api/config/public, gates on session, and triggers at most once
-// per page load.
+/**
+ * Mounts the Google One Tap prompt for signed-out visitors when the admin has
+ * enabled it. Self-contained: pulls config from /api/config/public, gates on
+ * session, and triggers at most once per page load.
+ *
+ * Split in two so the session fetch is not unconditional. This outer component
+ * is mounted on every page from __root, and it reads only the public config
+ * endpoint. The inner component — which calls `useSession()` — mounts only once
+ * One Tap is actually enabled and configured, so a site that does not use One
+ * Tap never requests `/api/auth/get-session` from a public page.
+ */
 export function GoogleOneTap() {
-  const { data: session, isPending } = useSession();
   const { data: configs } = usePublicConfig();
+
+  if (!configs) return null;
+  if (configs.google_one_tap_enabled !== 'true' || !configs.google_client_id) {
+    return null;
+  }
+
+  return <OneTapPrompt configs={configs} />;
+}
+
+function OneTapPrompt({ configs }: { configs: PublicConfig }) {
+  const { data: session, isPending } = useSession();
   const triggered = useRef(false);
 
   useEffect(() => {
     if (triggered.current) return;
-    if (!configs) return;
     if (isPending) return;
     if (session?.user) return;
-    if (
-      configs.google_one_tap_enabled !== 'true' ||
-      !configs.google_client_id
-    ) {
-      return;
-    }
 
     triggered.current = true;
     const client = getAuthClient(configs);

@@ -10,6 +10,7 @@ import {
   type ErrorComponentProps,
 } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import libreBaskervilleRegularUrl from '@fontsource/libre-baskerville/files/libre-baskerville-latin-400-normal.woff2?url';
 import { ThemeProvider } from 'next-themes';
 
 import { envConfigs } from '@/config';
@@ -23,10 +24,7 @@ import { GoogleOneTap } from '@/components/google-one-tap';
 import { SandboxPreviewBridge } from '@/components/sandbox-preview-bridge';
 import { Toaster } from '@/components/ui/sonner';
 
-import '@fontsource-variable/inter';
 import '@fontsource/libre-baskerville/400.css';
-import '@fontsource/libre-baskerville/700.css';
-import '@fontsource/libre-baskerville/400-italic.css';
 import '@/styles/globals.css';
 
 // Analytics IDs live in the DB config (1h-cached service). Fetched via a
@@ -130,6 +128,15 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang={getLocale()} suppressHydrationWarning>
       <head>
+        {/* Preload the LCP heading face before the generated stylesheet and
+            module preloads emitted by HeadContent. */}
+        <link
+          rel="preload"
+          href={libreBaskervilleRegularUrl}
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         <HeadContent />
       </head>
       <body className="font-sans antialiased">
