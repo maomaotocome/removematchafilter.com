@@ -440,6 +440,23 @@ try {
     `frame payload ${videoFrameChanges.first} → ${videoFrameChanges.second}`
   );
 
+  const originalTimeline = await page.evaluate(async () => {
+    const video = document.querySelector('video');
+    if (!video) return null;
+    const first = video.currentTime;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return { first, second: video.currentTime };
+  });
+  record(
+    'original preview shares the live adjusted timeline',
+    Boolean(
+      originalTimeline && originalTimeline.second > originalTimeline.first
+    ),
+    originalTimeline
+      ? `${originalTimeline.first.toFixed(2)}s → ${originalTimeline.second.toFixed(2)}s`
+      : 'no original video element'
+  );
+
   // --- 7. Video export (realtime recording of a 2s clip with audio) ---
   let exportedVideoPath = null;
   const exportButton = page.getByRole('button', { name: 'Export video' });

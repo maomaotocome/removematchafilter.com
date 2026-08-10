@@ -157,6 +157,7 @@ export function MatchaTool({
   const [shareCopied, setShareCopied] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const originalVideoHostRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MatchaRenderer | null>(null);
   const frameRef = useRef<number | null>(null);
   const mediaRef = useRef<SourceMedia | null>(null);
@@ -209,6 +210,25 @@ export function MatchaTool({
       );
     }
   }, [media, drawOnce, copy.webglUnsupported]);
+
+  // Mount the decoder element itself as the original preview. Using a second
+  // <video src=...> would create an independent playback clock, so the
+  // original and adjusted sides would drift as soon as either one was played
+  // or seeked.
+  useEffect(() => {
+    if (media?.mode !== 'video' || !originalVideoHostRef.current) return;
+
+    const host = originalVideoHostRef.current;
+    const video = media.element as HTMLVideoElement;
+    video.controls = true;
+    video.className = 'block h-auto w-full';
+    video.setAttribute('aria-label', copy.original);
+    host.replaceChildren(video);
+
+    return () => {
+      if (video.parentNode === host) host.removeChild(video);
+    };
+  }, [media, copy.original]);
 
   // Video: continuous render loop. Photo: single draw per param change.
   useEffect(() => {
@@ -294,7 +314,7 @@ export function MatchaTool({
   );
 
   function handleModeChange(next: MediaMode) {
-    if (next === mode) return;
+    if (exporting || next === mode) return;
     setMode(next);
     // Media of the other kind can't render in the new mode's controls.
     if (media && media.mode !== next) {
@@ -479,9 +499,10 @@ export function MatchaTool({
             type="button"
             role="tab"
             aria-selected={mode === value}
+            disabled={exporting}
             onClick={() => handleModeChange(value)}
             className={cn(
-              'rounded-full px-5 py-2 text-sm font-medium transition-colors',
+              'rounded-full px-5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
               mode === value
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -623,14 +644,7 @@ export function MatchaTool({
                 </figcaption>
                 <div className="border-border bg-muted overflow-hidden rounded-xl border">
                   {media!.mode === 'video' ? (
-                    <video
-                      src={media!.url}
-                      controls
-                      muted
-                      loop
-                      playsInline
-                      className="block h-auto w-full"
-                    />
+                    <div ref={originalVideoHostRef} />
                   ) : (
                     <img
                       src={media!.url}
