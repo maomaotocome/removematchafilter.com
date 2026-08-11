@@ -36,8 +36,10 @@ details above are enough.
   can export.
 - **A MOV file will not open.** HEVC-encoded video generally cannot be decoded
   outside Safari. Re-export as H.264 MP4 or WebM.
-- **Exported video has no sound.** Expected. Canvas recording captures picture
-  only; mux the original audio back with a video editor if you need it.
+- **An exported video has no sound even though the source clip does.** That is
+  not expected. The tool refuses export when it can detect that the browser
+  cannot attach the original audio track. Try the latest Chrome, Edge or
+  Firefox and include your browser version in the bug report.
 - **"This browser cannot start WebGL."** Hardware acceleration is disabled or
   unavailable. Turning it on in your browser settings usually fixes it.
 
