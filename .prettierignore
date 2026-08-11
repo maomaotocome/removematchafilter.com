@@ -48,6 +48,11 @@ prettier.config.*
 coverage
 .DS_Store
 
+# Author-owned spec: the launch brief is maintained by hand outside this repo's
+# formatting conventions. Reformatting it would create spurious diffs against
+# the source of truth.
+docs/launch-brief.md
+
 # Agent/skill files
 .claude
 .agents

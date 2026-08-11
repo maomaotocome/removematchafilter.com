@@ -1,0 +1,49 @@
+export const meta = {
+  title: 'Contact',
+  description:
+    'How to reach us about bugs, browser support, privacy questions or feedback.',
+  updated_at: '2026-08-08',
+};
+
+import { ContactChannel } from '@/components/matcha/contact-channel';
+
+## Email
+
+<ContactChannel />
+
+We read everything that arrives. We are a small team and do not promise a
+response time we cannot keep.
+
+## What to include for a bug report
+
+The tool runs entirely inside your browser, so almost every problem comes down
+to the combination of browser and file. Sending these four things lets us
+reproduce it without ever needing your media:
+
+1. Your browser and version, and your operating system.
+2. Whether you were in Photo or Video mode.
+3. The file type and rough size — for example "42 MB MOV from an iPhone".
+4. The exact error text the tool showed, if any.
+
+Please do **not** attach the photo or video itself. We have no pipeline for
+receiving customer media and would rather not start one; the reproduction
+details above are enough.
+
+## Known limits worth checking first
+
+- **Video export unavailable.** Your browser lacks `MediaRecorder` canvas
+  capture. Adjusting and previewing still work. Recent Chrome, Edge and Firefox
+  can export.
+- **A MOV file will not open.** HEVC-encoded video generally cannot be decoded
+  outside Safari. Re-export as H.264 MP4 or WebM.
+- **Exported video has no sound.** Expected. Canvas recording captures picture
+  only; mux the original audio back with a video editor if you need it.
+- **"This browser cannot start WebGL."** Hardware acceleration is disabled or
+  unavailable. Turning it on in your browser settings usually fixes it.
+
+## Privacy and legal
+
+For how the tool handles your files, see the
+[Privacy Policy](/privacy-policy). For terms of use, see the
+[Terms of Service](/terms-of-service). Privacy requests reach the same channel
+listed above.

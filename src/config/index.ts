@@ -58,6 +58,11 @@ export const envConfigs: Record<string, string> = {
   wechat_notify_url: procEnv.WECHAT_NOTIFY_URL ?? '',
   wechat_platform_cert: procEnv.WECHAT_PLATFORM_CERT ?? '',
 
+  // Public contact address shown on Contact / Privacy / Terms. Intentionally
+  // empty by default — the trust pages must never print an invented inbox, so
+  // they render an explicit "not configured yet" notice until this is set.
+  contact_email: publicEnv('VITE_CONTACT_EMAIL') ?? '',
+
   // Email - Resend
   resend_api_key: procEnv.RESEND_API_KEY ?? '',
   resend_sender_email:

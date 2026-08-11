@@ -5,9 +5,31 @@ import { baseLocale } from '@/paraglide/runtime.js';
 import { getLocalPosts, mergePosts } from '@/content/posts';
 
 const STATIC_PAGES: { path: string; title: string; description: string }[] = [
-  { path: '', title: 'Home', description: 'Landing page' },
-  { path: '/pricing', title: 'Pricing', description: 'Pricing plans' },
-  { path: '/blog', title: 'Blog', description: 'Blog posts and articles' },
+  {
+    path: '',
+    title: 'Remove Matcha Filter',
+    description: 'Free local photo and video filter correction tool',
+  },
+  {
+    path: '/from-photo',
+    title: 'Remove Matcha Filter from a Photo',
+    description: 'Photo-specific local correction workflow',
+  },
+  {
+    path: '/from-video',
+    title: 'Remove Matcha Filter from a Video',
+    description: 'Video-specific local correction and export workflow',
+  },
+  {
+    path: '/matcha-filter-trend',
+    title: 'Matcha Filter Trend Explained',
+    description: 'What the visual trend is and what can be corrected',
+  },
+  {
+    path: '/how-to-remove-matcha-filter',
+    title: 'How to Remove Matcha Filter',
+    description: 'Step-by-step guide for photos and videos',
+  },
 ];
 
 export const Route = createFileRoute('/llms-full.txt')({

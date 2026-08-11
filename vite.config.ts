@@ -73,16 +73,15 @@ export default defineConfig({
       outputStructure: 'message-modules',
       cookieName: 'PARAGLIDE_LOCALE',
       strategy: ['url', 'cookie', 'baseLocale'],
+      // English stays unprefixed; Chinese uses /zh. API endpoints remain
+      // locale-free because client data calls use stable /api paths.
       urlPatterns: [
         // API endpoints are never locale-prefixed.
         {
           pattern: '/api/:path(.*)?',
-          localized: [
-            ['en', '/api/:path(.*)?'],
-            ['zh', '/api/:path(.*)?'],
-          ],
+          localized: [['en', '/api/:path(.*)?']],
         },
-        // Bare locale homes match without a trailing-slash redirect.
+        // Bare locale home matches without a trailing-slash redirect.
         {
           pattern: '/',
           localized: [
@@ -90,7 +89,6 @@ export default defineConfig({
             ['en', '/'],
           ],
         },
-        // "as-needed" prefix: zh under /zh, en (default) unprefixed.
         {
           pattern: '/:path(.*)?',
           localized: [

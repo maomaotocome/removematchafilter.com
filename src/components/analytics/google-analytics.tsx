@@ -4,12 +4,13 @@
 // path; GA's enhanced measurement picks up History API navigations on its
 // own in App Router.
 export function GoogleAnalytics({ measurementId }: { measurementId: string }) {
-  if (!measurementId) return null;
+  const safeId = /^[A-Z0-9_-]{3,32}$/i.test(measurementId) ? measurementId : '';
+  if (!safeId) return null;
   return (
     <>
       <script
         id="ga-loader"
-        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(safeId)}`}
         async
       />
       {/* async={true} flags this to React 19 as a hoistable resource —
@@ -20,7 +21,7 @@ export function GoogleAnalytics({ measurementId }: { measurementId: string }) {
         id="ga-init"
         async
         dangerouslySetInnerHTML={{
-          __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${measurementId}');`,
+          __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',${JSON.stringify(safeId)});`,
         }}
       />
     </>

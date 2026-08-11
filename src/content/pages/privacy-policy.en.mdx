@@ -1,53 +1,83 @@
+import { ContactChannel } from '@/components/matcha/contact-channel';
+
 export const meta = {
   title: 'Privacy Policy',
-  description: 'How we collect, use, and protect your personal information.',
-  updated_at: '2026-05-21',
+  description:
+    'How Remove Matcha Filter handles your photos, videos and site data.',
+  updated_at: '2026-08-08',
 };
 
-## Introduction
+## The short version
 
-We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our service.
+**Your photos and videos are never uploaded.** The tool has no server-side
+media processing. When you choose a file, your browser decodes it locally, your
+GPU renders the adjusted version onto a canvas in the same tab, and the export
+is written directly to your device's downloads folder. Your media never reaches
+our servers, so we have no copy to store, inspect, share or train anything on.
 
-## Information We Collect
+## How the tool handles your media
 
-We collect the following types of information to provide and improve our service:
+When you pick or drag in a file:
 
-1. **Account Information** — Your name, email address, and other details you provide when creating an account.
-2. **Usage Data** — Information about how you interact with the service, including features accessed, frequency of use, and interaction patterns.
-3. **Device Information** — Device type, operating system, and browser type, used to optimize compatibility and performance.
-4. **Cookies** — Small data files stored on your device to remember preferences and improve your experience.
-5. **Payment Information** — Billing details handled by trusted third-party payment processors. We do not store full card numbers on our servers.
+1. The browser creates an object URL — a reference only this document can
+   resolve. It is not a network address and cannot be fetched by anyone else.
+2. A downscaled copy of one frame is measured in memory to derive the colour
+   correction. It is discarded when you load another file.
+3. Rendering happens through WebGL on your own hardware.
+4. Export encodes from that canvas and hands the file to your browser's normal
+   download mechanism.
 
-## How We Use Your Information
+Every step runs inside the tab. Closing or reloading the page releases the
+object URL and discards the decoded frames; nothing persists.
 
-We use the data we collect to:
+## What we do collect
 
-- Provide, maintain, and improve the service.
-- Process transactions and send related confirmations.
-- Send technical notices, security alerts, and support messages.
-- Respond to your questions, feedback, and support requests.
-- Detect, prevent, and address fraud and abuse.
+**Server logs.** Requesting pages from this site produces ordinary web server
+logs: IP address, timestamp, requested path, referrer and user agent. These are
+kept briefly for security and debugging, and they record page requests only —
+never file contents, filenames or slider values.
 
-## Data Sharing
+**Local browser storage.** A small number of preferences live on your device,
+such as your light/dark theme choice and the language cookie used by the
+internationalisation layer. They stay on your device.
 
-We do not sell your personal information. We may share data only in these limited cases:
+**Analytics, if enabled.** If privacy-respecting aggregate analytics are active
+on this site, they record page views and referrers — not your media and not your
+adjustments. No analytics provider receives your files, because your files are
+never transmitted anywhere.
 
-- With service providers who help us operate the service, under confidentiality agreements.
-- To comply with legal obligations or respond to lawful requests from public authorities.
-- To protect our rights, property, or safety, or that of our users.
+## Accounts and payments
 
-## Data Security
+This site is built on a platform that includes optional account, subscription
+and support features. The matcha filter tool does not use them: you do not need
+to sign in, and there is nothing to pay for. If you never create an account, we
+hold no account data about you. Should those features be offered later, this
+policy will be updated before they go live.
 
-We implement industry-standard security measures including encryption in transit, access controls, and regular reviews. No method of transmission over the Internet is 100% secure, but we work continuously to protect your information.
+## Third parties
 
-## Your Rights
+We do not sell or share your personal information. We do not send your media to
+any third party, including AI or cloud-processing services, because the tool
+never transmits your media at all. Ordinary infrastructure providers — hosting
+and CDN — process page requests on our behalf under their own terms.
 
-You have the right to access, update, export, or delete your personal information. You can do this through your account settings or by contacting us at the email address below.
+## Children
 
-## Changes to This Policy
+The tool is not directed at children under 13, and we do not knowingly collect
+personal information from them.
 
-We may update this Privacy Policy from time to time. We will notify you of any material changes by updating the date at the top of this page and, where appropriate, sending a notice through the service.
+## Your rights
 
-## Contact Us
+Depending on where you live, you may have the right to access, correct, export
+or delete personal information we hold about you. Because the tool works without
+an account and never receives your media, there is usually very little to act
+on. Send requests to the address below.
 
-If you have questions about this Privacy Policy, please contact us at the email address provided on our website.
+## Changes
+
+Material changes to this policy will be reflected in the "last updated" date at
+the top of this page.
+
+## Contact
+
+Privacy questions: <ContactChannel />, or see the [Contact page](/contact).
