@@ -16,13 +16,72 @@ import { baseLocale, localizeUrl } from '@/paraglide/runtime.js';
 
 const origin = () => envConfigs.app_url.replace(/\/+$/, '');
 
+export const SITE_PUBLISHED_AT = '2026-08-08';
+export const SITE_REVIEWED_AT = '2026-08-16';
+export const EDITORIAL_TEAM_NAME = 'Matcha Filter Remover Team';
+export const MAINTAINER_NAME = 'Jared';
+export const OFFICIAL_REPOSITORY_URL =
+  'https://github.com/maomaotocome/removematchafilter.com';
+
+const editorialTeamRef = () => ({
+  '@type': 'Organization',
+  '@id': `${origin()}/#editorial-team`,
+  name: EDITORIAL_TEAM_NAME,
+  url: `${origin()}/about`,
+});
+
+const maintainerRef = () => ({
+  '@type': 'Person',
+  '@id': `${origin()}/#jared`,
+  name: MAINTAINER_NAME,
+  url: `${origin()}/about`,
+});
+
 export function organizationSchema() {
+  const contactEmail = envConfigs.contact_email.trim();
   return {
     '@type': 'Organization',
     '@id': `${origin()}/#organization`,
     name: envConfigs.app_name,
     url: `${origin()}/`,
     logo: `${origin()}/logo.svg`,
+    sameAs: [OFFICIAL_REPOSITORY_URL],
+    member: { '@id': `${origin()}/#jared` },
+    ...(contactEmail
+      ? {
+          contactPoint: {
+            '@type': 'ContactPoint',
+            contactType: 'customer support',
+            email: contactEmail,
+            availableLanguage: ['English', 'Chinese'],
+          },
+        }
+      : {}),
+  };
+}
+
+/** Public authorship entity shown verbatim on the homepage and About page. */
+export function editorialTeamSchema() {
+  return {
+    '@type': 'Organization',
+    '@id': `${origin()}/#editorial-team`,
+    name: EDITORIAL_TEAM_NAME,
+    url: `${origin()}/about`,
+    parentOrganization: { '@id': `${origin()}/#organization` },
+    member: { '@id': `${origin()}/#jared` },
+  };
+}
+
+/** Named maintainer supplied by the site owner; no unsupported profile added. */
+export function maintainerSchema() {
+  return {
+    '@type': 'Person',
+    '@id': `${origin()}/#jared`,
+    name: MAINTAINER_NAME,
+    jobTitle: 'Maintainer',
+    url: `${origin()}/about`,
+    memberOf: { '@id': `${origin()}/#editorial-team` },
+    worksFor: { '@id': `${origin()}/#organization` },
   };
 }
 
@@ -34,6 +93,80 @@ export function websiteSchema() {
     url: `${origin()}/`,
     publisher: { '@id': `${origin()}/#organization` },
     inLanguage: ['en', 'zh'],
+  };
+}
+
+export function webPageSchema({
+  path,
+  name,
+  description,
+  locale = baseLocale,
+  datePublished = SITE_PUBLISHED_AT,
+  dateModified = SITE_REVIEWED_AT,
+}: {
+  path: string;
+  name: string;
+  description: string;
+  locale?: string;
+  datePublished?: string;
+  dateModified?: string;
+}) {
+  const url = localizeUrl(`${origin()}${path}`, {
+    locale: locale as typeof baseLocale,
+  }).href;
+  return {
+    '@type': 'WebPage',
+    '@id': `${url}#webpage`,
+    url,
+    name,
+    description,
+    inLanguage: locale,
+    datePublished,
+    dateModified,
+    isPartOf: { '@id': `${origin()}/#website` },
+    about: { '@id': `${origin()}/#webapp` },
+    mainEntity: { '@id': `${origin()}/#webapp` },
+    author: editorialTeamRef(),
+    editor: maintainerRef(),
+    publisher: { '@id': `${origin()}/#organization` },
+    primaryImageOfPage: {
+      '@type': 'ImageObject',
+      url: `${origin()}/imgs/og-cover.png`,
+    },
+  };
+}
+
+export function aboutPageSchema({
+  name,
+  description,
+  locale = baseLocale,
+  datePublished = SITE_REVIEWED_AT,
+  dateModified = SITE_REVIEWED_AT,
+}: {
+  name: string;
+  description: string;
+  locale?: string;
+  datePublished?: string;
+  dateModified?: string;
+}) {
+  const url = localizeUrl(`${origin()}/about`, {
+    locale: locale as typeof baseLocale,
+  }).href;
+  return {
+    '@type': 'AboutPage',
+    '@id': `${url}#about-page`,
+    url,
+    name,
+    description,
+    inLanguage: locale,
+    datePublished,
+    dateModified,
+    isPartOf: { '@id': `${origin()}/#website` },
+    about: { '@id': `${origin()}/#organization` },
+    mainEntity: { '@id': `${origin()}/#organization` },
+    author: editorialTeamRef(),
+    editor: maintainerRef(),
+    publisher: { '@id': `${origin()}/#organization` },
   };
 }
 
@@ -72,6 +205,8 @@ export function webApplicationSchema(featureList: string[]) {
     isAccessibleForFree: true,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     featureList,
+    codeRepository: OFFICIAL_REPOSITORY_URL,
+    author: editorialTeamRef(),
     publisher: { '@id': `${origin()}/#organization` },
   };
 }
@@ -121,7 +256,8 @@ export function articleSchema({
     datePublished,
     dateModified,
     inLanguage: locale,
-    author: { '@id': `${origin()}/#organization` },
+    author: editorialTeamRef(),
+    editor: maintainerRef(),
     publisher: { '@id': `${origin()}/#organization` },
     image: `${origin()}/imgs/og-cover.png`,
   };
@@ -152,7 +288,6 @@ export function howToSchema({
     description,
     url,
     inLanguage: locale,
-    totalTime: 'PT5M',
     tool: tools.map((tool) => ({ '@type': 'HowToTool', name: tool })),
     step: steps.map((step, index) => ({
       '@type': 'HowToStep',

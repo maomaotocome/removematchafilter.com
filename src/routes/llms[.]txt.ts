@@ -30,6 +30,11 @@ const STATIC_PAGES: { path: string; title: string; description: string }[] = [
     title: 'How to Remove Matcha Filter',
     description: 'Step-by-step guide for photos and videos',
   },
+  {
+    path: '/about',
+    title: 'About Remove Matcha Filter',
+    description: 'Team, methodology, primary sources and editorial policy',
+  },
 ];
 
 export const Route = createFileRoute('/llms.txt')({

@@ -3,9 +3,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
   articleSchema,
   breadcrumbSchema,
+  editorialTeamSchema,
   faqSchema,
   howToSchema,
   jsonLdScript,
+  maintainerSchema,
   organizationSchema,
   websiteSchema,
 } from '@/lib/matcha/schema';
@@ -26,6 +28,7 @@ import { FaqList } from '@/components/matcha/faq-list';
 import { LinkCards } from '@/components/matcha/link-cards';
 
 const PUBLISHED_AT = '2026-08-09';
+const MODIFIED_AT = '2026-08-15';
 
 function guideSteps(locale?: ReturnType<typeof getLocale>) {
   const o = { locale };
@@ -73,12 +76,31 @@ function HowToRemoveMatchaFilterPage() {
           eyebrow={m['guide.eyebrow']()}
           title={m['guide.h1']()}
           lede={m['guide.lede']()}
+          byline={m['article.byline']()}
           updatedLabel={m['article.updated']()}
           breadcrumbs={[
             { href: '/', label: m['breadcrumb.home']() },
             {
               href: '/how-to-remove-matcha-filter',
               label: m['breadcrumb.guide'](),
+            },
+          ]}
+        />
+
+        <LinkCards
+          title={m['home.related_title']()}
+          cards={[
+            {
+              href: '/from-photo',
+              title: m['guide.photo_cta'](),
+              body: m['home.paths_photo_body'](),
+              cta: m['home.paths_photo_cta'](),
+            },
+            {
+              href: '/from-video',
+              title: m['guide.video_cta'](),
+              body: m['home.paths_video_body'](),
+              cta: m['home.paths_video_cta'](),
             },
           ]}
         />
@@ -152,24 +174,6 @@ function HowToRemoveMatchaFilterPage() {
         />
 
         <FaqList title={m['guide.faq_title']()} items={faqItems()} />
-
-        <LinkCards
-          title={m['home.related_title']()}
-          cards={[
-            {
-              href: '/from-photo',
-              title: m['guide.photo_cta'](),
-              body: m['home.paths_photo_body'](),
-              cta: m['home.paths_photo_cta'](),
-            },
-            {
-              href: '/from-video',
-              title: m['guide.video_cta'](),
-              body: m['home.paths_video_body'](),
-              cta: m['home.paths_video_cta'](),
-            },
-          ]}
-        />
       </main>
       <MatchaFooter />
     </div>
@@ -206,6 +210,8 @@ export const Route = createFileRoute('/how-to-remove-matcha-filter')({
           scripts: [
             jsonLdScript([
               organizationSchema(),
+              editorialTeamSchema(),
+              maintainerSchema(),
               websiteSchema(),
               articleSchema({
                 path: '/how-to-remove-matcha-filter',
@@ -213,6 +219,7 @@ export const Route = createFileRoute('/how-to-remove-matcha-filter')({
                 description: loaderData.description,
                 locale: loaderData.locale,
                 datePublished: PUBLISHED_AT,
+                dateModified: MODIFIED_AT,
               }),
               howToSchema({
                 path: '/how-to-remove-matcha-filter',
