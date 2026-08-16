@@ -1,31 +1,7 @@
 import { m } from '@/paraglide/messages.js';
 import { SiteFooter, type FooterColumn } from '@/components/site-footer';
-import { SiteHeader } from '@/components/site-header';
 
-/**
- * Public nav. Only the three tool pages plus the trust pages — the template's
- * SaaS surfaces (pricing, blog, settings, admin) stay in the codebase but are
- * intentionally not part of the launch user path.
- */
-export function MatchaHeader() {
-  return (
-    <SiteHeader
-      showCta={false}
-      navLinks={[
-        { href: '/from-photo', label: m['landing.nav.photo']() },
-        { href: '/from-video', label: m['landing.nav.video']() },
-        {
-          href: '/how-to-remove-matcha-filter',
-          label: m['landing.nav.guide'](),
-        },
-        {
-          href: '/matcha-filter-trend',
-          label: m['landing.nav.trend'](),
-        },
-      ]}
-    />
-  );
-}
+export { MatchaHeader } from './public-header';
 
 /**
  * Public header. `showCta={false}` keeps the template's "Get Started" →
@@ -59,6 +35,7 @@ export function MatchaFooter() {
     {
       title: m['site.footer.company'](),
       links: [
+        { label: m['site.footer.about'](), href: '/about' },
         { label: m['site.footer.contact'](), href: '/contact' },
         { label: m['site.footer.privacy'](), href: '/privacy-policy' },
         { label: m['site.footer.terms'](), href: '/terms-of-service' },

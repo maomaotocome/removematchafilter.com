@@ -12,6 +12,7 @@ const STATIC_PATHS = [
   '/from-video',
   '/matcha-filter-trend',
   '/how-to-remove-matcha-filter',
+  '/about',
   '/contact',
   '/privacy-policy',
   '/terms-of-service',
@@ -24,22 +25,25 @@ type Entry = {
   priority: number;
 };
 
-function urlFor(path: string, locale: string): string {
+type Locale = (typeof locales)[number];
+
+function urlFor(path: string, locale: Locale): string {
   return localizeUrl(`${envConfigs.app_url}${path || '/'}`, {
-    locale: locale as (typeof locales)[number],
+    locale,
   }).href;
 }
 
-function entryXml(e: Entry): string {
-  const alternates = locales
-    .map(
-      (loc) =>
-        `    <xhtml:link rel="alternate" hreflang="${loc}" href="${urlFor(e.path, loc)}"/>`
-    )
-    .join('\n');
+function entryXml(e: Entry, locale: Locale): string {
+  const alternates = [
+    ...locales.map(
+      (alternateLocale) =>
+        `    <xhtml:link rel="alternate" hreflang="${alternateLocale}" href="${urlFor(e.path, alternateLocale)}"/>`
+    ),
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${urlFor(e.path, baseLocale)}"/>`,
+  ].join('\n');
   return [
     '  <url>',
-    `    <loc>${urlFor(e.path, baseLocale)}</loc>`,
+    `    <loc>${urlFor(e.path, locale)}</loc>`,
     alternates,
     e.lastModified ? `    <lastmod>${e.lastModified}</lastmod>` : null,
     `    <changefreq>${e.changeFrequency}</changefreq>`,
@@ -74,7 +78,11 @@ export const Route = createFileRoute('/sitemap.xml')({
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
-          ...entries.map(entryXml),
+          // Google expects every localized URL to have its own <url> entry,
+          // with the complete reciprocal alternate set repeated on each one.
+          ...entries.flatMap((entry) =>
+            locales.map((locale) => entryXml(entry, locale))
+          ),
           '</urlset>',
           '',
         ].join('\n');

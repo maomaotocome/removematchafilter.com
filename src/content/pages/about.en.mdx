@@ -1,0 +1,81 @@
+import { ContactChannel } from '@/components/matcha/contact-channel';
+
+export const meta = {
+  title: 'About Remove Matcha Filter',
+  description:
+    'Meet the team, review the methodology and sources, and understand what the Remove Matcha Filter tool can and cannot do.',
+  updated_at: '2026-08-16',
+};
+
+## Who publishes this site
+
+Remove Matcha Filter is published by **Matcha Filter Remover Team** and
+maintained by **Jared**. The team is responsible for the tool, its documentation,
+its browser-compatibility guidance and every claim presented on this site.
+
+We use a team byline instead of inventing individual credentials. Jared is named
+as the maintainer so readers and search systems can connect the published
+guidance to a real accountable person.
+
+## What we build
+
+Remove Matcha Filter is a free browser tool for reducing the visible green cast,
+added grain and flattened contrast associated with the Matcha Filter look. It
+processes photos and videos locally with WebGL and exports the adjusted result
+without sending the selected media to a server.
+
+The tool performs deterministic correction. It does not ask a generative model
+to imagine a replacement image, and it does not claim to recreate pixels that a
+filter clipped, covered or replaced. The result is an adjusted edit, not proof
+of what an untouched original looked like.
+
+## How we check product claims
+
+We follow four rules when publishing technical or product information:
+
+1. Product limits must match constants and runtime checks in the shipped code.
+2. Visible instructions and structured data must describe the same behavior.
+3. Browser capability explanations should link to the relevant primary
+   specification whenever one is available.
+4. Limitations and failure states stay visible; a successful example is not a
+   guarantee that every file will produce the same result.
+
+The current implementation accepts photos up to 25 MB and videos up to 200 MB.
+Photo output is capped at 4096 pixels on the long edge, while video processing
+is capped at 1920 pixels and records in real time.
+
+## Primary technical sources
+
+- [W3C File API](https://www.w3.org/TR/FileAPI/) for the browser object URLs
+  used to open a selected local file.
+- [Khronos WebGL specifications](https://registry.khronos.org/webgl/specs/latest/)
+  for the rendering API used by the local adjustment pipeline.
+- [W3C MediaStream Recording](https://www.w3.org/TR/mediastream-recording/) for
+  the `MediaRecorder` API used during supported video export.
+
+These standards explain the underlying browser APIs. They do not endorse this
+product or prove that destroyed image information can be recovered.
+
+## Editorial and update policy
+
+Matcha Filter Remover Team reviews core pages when tool behavior, supported
+formats, browser compatibility or important product limits change. Dates shown
+on a page refer to the publication or substantive review of that page, not an
+automatic timestamp.
+
+We prefer direct answers, reproducible limits and primary sources. We do not use
+fixed keyword density, publish near-duplicate pages for reordered phrases, or
+add statistics whose underlying study cannot be reviewed.
+
+## Open implementation
+
+The official source repository is
+[maomaotocome/removematchafilter.com](https://github.com/maomaotocome/removematchafilter.com).
+It is the public entity link used in this site's structured data and lets
+technical readers inspect the implementation and quality checks directly.
+
+## Contact
+
+Questions, corrections and browser-compatibility reports: <ContactChannel />.
+You can also use the [Contact page](/contact) for the details that make a bug
+report useful without sending us your media.

@@ -4,7 +4,7 @@ export const meta = {
   title: 'Privacy Policy',
   description:
     'How Remove Matcha Filter handles your photos, videos and site data.',
-  updated_at: '2026-08-08',
+  updated_at: '2026-08-16',
 };
 
 ## The short version
@@ -19,8 +19,9 @@ our servers, so we have no copy to store, inspect, share or train anything on.
 
 When you pick or drag in a file:
 
-1. The browser creates an object URL — a reference only this document can
-   resolve. It is not a network address and cannot be fetched by anyone else.
+1. The browser creates a temporary object URL that refers to the selected
+   `File` for local decoding. The tool does not make an upload request, and it
+   revokes that URL when the file is replaced, reset or released.
 2. A downscaled copy of one frame is measured in memory to derive the colour
    correction. It is discarded when you load another file.
 3. Rendering happens through WebGL on your own hardware.

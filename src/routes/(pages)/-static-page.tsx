@@ -2,6 +2,14 @@ import type { ComponentType } from 'react';
 import { notFound, useLoaderData } from '@tanstack/react-router';
 
 import { envConfigs } from '@/config';
+import {
+  aboutPageSchema,
+  editorialTeamSchema,
+  jsonLdScript,
+  maintainerSchema,
+  organizationSchema,
+  websiteSchema,
+} from '@/lib/matcha/schema';
 import { pageHead } from '@/lib/matcha/seo';
 import { m } from '@/paraglide/messages.js';
 import { baseLocale, getLocale } from '@/paraglide/runtime.js';
@@ -48,6 +56,24 @@ export function staticPageRouteOptions(slug: string) {
     head: ({ loaderData }: { loaderData?: LoaderData }) => {
       if (!loaderData) return {};
       const { meta, locale } = loaderData;
+      const scripts =
+        slug === 'about'
+          ? [
+              jsonLdScript([
+                organizationSchema(),
+                editorialTeamSchema(),
+                maintainerSchema(),
+                websiteSchema(),
+                aboutPageSchema({
+                  name: meta.title,
+                  description: meta.description,
+                  locale,
+                  datePublished: meta.updated_at,
+                  dateModified: meta.updated_at,
+                }),
+              ]),
+            ]
+          : undefined;
       // Shared with the tool routes so every page gets the same canonical +
       // Open Graph treatment. Titles carry the brand for standalone sharing.
       return pageHead({
@@ -55,6 +81,7 @@ export function staticPageRouteOptions(slug: string) {
         title: `${meta.title} — ${envConfigs.app_name}`,
         description: meta.description,
         locale,
+        scripts,
       });
     },
     component: StaticPage,

@@ -1,17 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import {
+  editorialTeamSchema,
   faqSchema,
   jsonLdScript,
+  maintainerSchema,
   organizationSchema,
   webAppFeatures,
   webApplicationSchema,
+  webPageSchema,
   websiteSchema,
 } from '@/lib/matcha/schema';
 import { pageHead } from '@/lib/matcha/seo';
 import { m } from '@/paraglide/messages.js';
 import { getLocale } from '@/paraglide/runtime.js';
 import { Examples } from '@/blocks/matcha/examples';
+import { Provenance } from '@/blocks/matcha/provenance';
 import { RecoveryBoundary } from '@/blocks/matcha/recovery-boundary';
 import { MatchaFooter, MatchaHeader } from '@/blocks/matcha/site-chrome';
 import { ToolSection } from '@/blocks/matcha/tool-section';
@@ -50,8 +54,6 @@ function HomePage() {
           subhead={m['home.subhead']()}
           chooseFile={m['tool.cta_file']()}
         />
-
-        <Examples />
 
         <RecoveryBoundary tone="muted" />
 
@@ -114,11 +116,15 @@ function HomePage() {
           ]}
         />
 
+        <Examples />
+
         <ProseSection
           title={m['home.privacy_title']()}
           paragraphs={[m['home.privacy_body']()]}
           tone="muted"
         />
+
+        <Provenance />
 
         <FaqList id="faq" title={m['home.faq_title']()} items={faqItems()} />
 
@@ -168,7 +174,15 @@ export const Route = createFileRoute('/')({
           scripts: [
             jsonLdScript([
               organizationSchema(),
+              editorialTeamSchema(),
+              maintainerSchema(),
               websiteSchema(),
+              webPageSchema({
+                path: '/',
+                name: loaderData.title,
+                description: loaderData.description,
+                locale: loaderData.locale,
+              }),
               webApplicationSchema(webAppFeatures),
               faqSchema(loaderData.faq),
             ]),

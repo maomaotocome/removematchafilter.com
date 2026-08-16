@@ -8,12 +8,14 @@ export function ArticleHero({
   eyebrow,
   title,
   lede,
+  byline,
   updatedLabel,
   breadcrumbs,
 }: {
   eyebrow: string;
   title: string;
   lede: string;
+  byline?: string;
   updatedLabel: string;
   breadcrumbs: { href: string; label: string }[];
 }) {
@@ -48,7 +50,11 @@ export function ArticleHero({
         <p className="text-muted-foreground text-lede mt-5 max-w-2xl text-pretty">
           {lede}
         </p>
-        <p className="text-muted-foreground mt-6 text-xs">{updatedLabel}</p>
+        <div className="text-muted-foreground mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          {byline && <span className="text-foreground/80">{byline}</span>}
+          {byline && <span aria-hidden="true">·</span>}
+          <span>{updatedLabel}</span>
+        </div>
       </div>
     </header>
   );
