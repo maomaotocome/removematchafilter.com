@@ -3,8 +3,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
   articleSchema,
   breadcrumbSchema,
+  editorialTeamSchema,
   faqSchema,
   jsonLdScript,
+  maintainerSchema,
   organizationSchema,
   websiteSchema,
 } from '@/lib/matcha/schema';
@@ -25,6 +27,7 @@ import { LinkCards } from '@/components/matcha/link-cards';
 import { StepList } from '@/components/matcha/prose-section';
 
 const PUBLISHED_AT = '2026-08-09';
+const MODIFIED_AT = '2026-08-15';
 
 function faqItems(locale?: ReturnType<typeof getLocale>) {
   const o = { locale };
@@ -46,6 +49,7 @@ function MatchaFilterTrendPage() {
           eyebrow={m['trend.eyebrow']()}
           title={m['trend.h1']()}
           lede={m['trend.lede']()}
+          byline={m['article.byline']()}
           updatedLabel={m['article.updated']()}
           breadcrumbs={[
             { href: '/', label: m['breadcrumb.home']() },
@@ -83,9 +87,17 @@ function MatchaFilterTrendPage() {
         </ArticleSection>
 
         <ArticleSection
+          title={m['trend.without_title']()}
+          paragraphs={[
+            m['trend.without_body_1'](),
+            m['trend.without_body_2'](),
+          ]}
+          tone="muted"
+        />
+
+        <ArticleSection
           title={m['trend.layers_title']()}
           paragraphs={[m['trend.layers_intro']()]}
-          tone="muted"
         >
           <ExplainedList
             items={[
@@ -213,6 +225,8 @@ export const Route = createFileRoute('/matcha-filter-trend')({
           scripts: [
             jsonLdScript([
               organizationSchema(),
+              editorialTeamSchema(),
+              maintainerSchema(),
               websiteSchema(),
               articleSchema({
                 path: '/matcha-filter-trend',
@@ -220,6 +234,7 @@ export const Route = createFileRoute('/matcha-filter-trend')({
                 description: loaderData.description,
                 locale: loaderData.locale,
                 datePublished: PUBLISHED_AT,
+                dateModified: MODIFIED_AT,
               }),
               breadcrumbSchema(loaderData.crumbs, loaderData.locale),
               faqSchema(loaderData.faq),

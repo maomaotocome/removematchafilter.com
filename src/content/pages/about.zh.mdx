@@ -1,0 +1,72 @@
+import { ContactChannel } from '@/components/matcha/contact-channel';
+
+export const meta = {
+  title: '关于 Remove Matcha Filter',
+  description:
+    '了解 Remove Matcha Filter 的团队、维护者、技术方法、一手来源，以及工具能做和不能做的事情。',
+  updated_at: '2026-08-16',
+};
+
+## 谁在发布和维护本站
+
+Remove Matcha Filter 由 **Matcha Filter Remover Team** 发布，并由
+**Jared** 负责维护。团队对工具、说明文档、浏览器兼容建议以及本站公开的
+每一项产品声明负责。
+
+我们使用团队署名，不虚构个人资历；同时公开维护者 Jared，让读者和搜索系统
+能够把网站内容与真实、可问责的人员联系起来。
+
+## 我们在做什么
+
+Remove Matcha Filter 是一款免费的浏览器工具，用于减弱抹茶滤镜效果常见的
+绿色偏色、叠加颗粒和扁平对比度。它使用 WebGL 在本地处理照片和视频，
+导出调整结果时不会把你选择的媒体文件发送到服务器。
+
+工具执行的是确定性校正，不会让生成式模型猜测一张替代画面，也不会声称能够
+重建滤镜已经削掉、覆盖或替换的像素。输出结果是一份经过调整的编辑版本，
+不能用来证明未经处理的原片原本是什么样子。
+
+## 我们如何核对产品声明
+
+发布技术和产品信息时，我们遵守四条规则：
+
+1. 产品上限必须与已上线代码中的常量和运行时检测一致。
+2. 页面可见说明与结构化数据必须描述同一种行为。
+3. 解释浏览器能力时，只要存在一手规范，就应链接该规范。
+4. 限制和失败情况必须公开；一个成功示例不代表所有文件都能得到同样结果。
+
+当前实现支持最大 25 MB 的图片和最大 200 MB 的视频。图片导出长边最高
+4096 像素；视频处理长边最高 1920 像素，并按片段实际时长完成录制。
+
+## 一手技术来源
+
+- [W3C File API](https://www.w3.org/TR/FileAPI/)：说明浏览器打开所选本地
+  文件时使用的对象 URL。
+- [Khronos WebGL 规范](https://registry.khronos.org/webgl/specs/latest/)：说明
+  本地调整流程所使用的渲染 API。
+- [W3C MediaStream Recording](https://www.w3.org/TR/mediastream-recording/)：
+  说明受支持的视频导出过程中使用的 `MediaRecorder` API。
+
+这些规范用于解释底层浏览器能力，不代表标准组织为本产品背书，也不能证明
+已经丢失的图像信息可以被恢复。
+
+## 内容更新政策
+
+当工具行为、支持格式、浏览器兼容性或重要产品上限发生变化时，
+Matcha Filter Remover Team 会复核核心页面。页面日期表示该内容的首次发布或
+实质性复核时间，而不是自动刷新的时间戳。
+
+我们优先提供直接答案、可复现上限和一手来源；不会追求固定关键词密度，
+不会为词序变化发布近似重复页面，也不会引用无法核查原始研究的百分比数据。
+
+## 公开实现
+
+本站的官方源码仓库是
+[maomaotocome/removematchafilter.com](https://github.com/maomaotocome/removematchafilter.com)。
+它也是结构化数据中的公开实体链接，方便技术读者直接核对实现与质量检查。
+
+## 联系我们
+
+如需反馈问题、内容更正或浏览器兼容情况，请联系 <ContactChannel />。
+你也可以查看[联系页面](/contact)，了解怎样在不发送媒体文件的情况下提供有效的
+问题复现信息。
