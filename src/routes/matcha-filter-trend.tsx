@@ -192,6 +192,18 @@ function MatchaFilterTrendPage() {
               body: m['home.paths_video_body'](),
               cta: m['home.paths_video_cta'](),
             },
+            {
+              href: '/remove-matcha-filter-tiktok',
+              title: m['platform.tiktok_card_title'](),
+              body: m['platform.tiktok_card_body'](),
+              cta: m['platform.tiktok_card_cta'](),
+            },
+            {
+              href: '/remove-matcha-filter-capcut',
+              title: m['platform.capcut_card_title'](),
+              body: m['platform.capcut_card_body'](),
+              cta: m['platform.capcut_card_cta'](),
+            },
           ]}
         />
       </main>

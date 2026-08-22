@@ -1,6 +1,14 @@
-# ShipAny Next
+# Remove Matcha Filter
 
-A headless SaaS engine for building AI-powered products with Claude Code. Pre-wired business logic (payments, credits, subscriptions, auth, RBAC, i18n, CMS) with minimal UI — you build your product pages on top.
+[Matcha Filter Remover](https://removematchafilter.com/) is a free browser-based tool for reducing the green colour cast, added grain and flattened contrast associated with the Matcha Filter look. Photos and videos are processed locally on the user's device, with no media upload, account or credits required.
+
+Use the format-specific tools to [remove Matcha Filter from a photo](https://removematchafilter.com/from-photo) or [remove Matcha Filter from a video](https://removematchafilter.com/from-video). The [step-by-step removal guide](https://removematchafilter.com/how-to-remove-matcha-filter) explains the safest adjustment order and the limits of recovering an already-filtered file.
+
+The tool corrects visible colour and texture; it does not claim to reconstruct original pixels that an effect replaced or discarded.
+
+## Developer setup
+
+The product is built on the ShipAny TanStack foundation, with its auth, billing, RBAC, i18n and administration modules retained in the repository.
 
 ## Quick Start
 

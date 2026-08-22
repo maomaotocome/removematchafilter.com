@@ -41,9 +41,19 @@ export function MatchaHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="inline-flex min-h-11 items-center font-serif text-lg italic"
+          className="inline-flex min-h-11 items-center gap-2.5 font-serif text-lg italic"
         >
-          {envConfigs.app_name}
+          <span className="ring-border/80 inline-flex size-8 shrink-0 overflow-hidden rounded-lg ring-1">
+            <img
+              src="/favicon.svg"
+              alt=""
+              width={32}
+              height={32}
+              aria-hidden="true"
+              className="size-full"
+            />
+          </span>
+          <span>{envConfigs.app_name}</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

@@ -56,20 +56,6 @@ function FromVideoPage() {
           chooseFile={m['tool.cta_video']()}
         />
 
-        <Examples />
-
-        <RecoveryBoundary tone="muted" />
-
-        <ProseSection id="how-it-works" title={m['home.how_title']()}>
-          <StepList
-            steps={[
-              { title: m['home.how_1_title'](), body: m['home.how_1_body']() },
-              { title: m['home.how_2_title'](), body: m['home.how_2_body']() },
-              { title: m['home.how_3_title'](), body: m['home.how_3_body']() },
-            ]}
-          />
-        </ProseSection>
-
         <ProseSection
           title={m['video.body_title']()}
           paragraphs={[
@@ -82,13 +68,20 @@ function FromVideoPage() {
         />
 
         <ProseSection
+          id="tiktok"
           title={m['video.tiktok_title']()}
           paragraphs={[m['video.tiktok_body_1'](), m['video.tiktok_body_2']()]}
         >
-          <InlineCta
-            href="/how-to-remove-matcha-filter"
-            label={m['video.guide_cta']()}
-          />
+          <div className="flex flex-wrap gap-3">
+            <InlineCta
+              href="/remove-matcha-filter-tiktok"
+              label={m['platform.tiktok_card_cta']()}
+            />
+            <InlineCta
+              href="/how-to-remove-matcha-filter"
+              label={m['video.guide_cta']()}
+            />
+          </div>
         </ProseSection>
 
         <ProseSection title={m['video.export_title']()}>
@@ -112,7 +105,21 @@ function FromVideoPage() {
           />
         </ProseSection>
 
-        <FaqList id="faq" title={m['home.faq_title']()} items={faqItems()} />
+        <ProseSection id="how-it-works" title={m['home.how_title']()}>
+          <StepList
+            steps={[
+              { title: m['home.how_1_title'](), body: m['home.how_1_body']() },
+              { title: m['home.how_2_title'](), body: m['home.how_2_body']() },
+              { title: m['home.how_3_title'](), body: m['home.how_3_body']() },
+            ]}
+          />
+        </ProseSection>
+
+        <RecoveryBoundary tone="muted" />
+
+        <Examples />
+
+        <FaqList id="faq" title={m['video.faq_title']()} items={faqItems()} />
 
         <LinkCards
           title={m['home.related_title']()}
@@ -128,6 +135,18 @@ function FromVideoPage() {
               title: m['home.trend_card_title'](),
               body: m['home.trend_card_body'](),
               cta: m['home.trend_card_cta'](),
+            },
+            {
+              href: '/remove-matcha-filter-tiktok',
+              title: m['platform.tiktok_card_title'](),
+              body: m['platform.tiktok_card_body'](),
+              cta: m['platform.tiktok_card_cta'](),
+            },
+            {
+              href: '/remove-matcha-filter-capcut',
+              title: m['platform.capcut_card_title'](),
+              body: m['platform.capcut_card_body'](),
+              cta: m['platform.capcut_card_cta'](),
             },
           ]}
         />

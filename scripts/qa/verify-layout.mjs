@@ -77,9 +77,9 @@ try {
         ])
       )
       .catch(() => {});
-    // The first viewport pays a cold cache, and at 3x DPR that means four
-    // ~150KB JPEGs. Poll until every image has decoded rather than waiting a
-    // fixed beat — a short wait here reported perfectly good images as broken.
+    // The first viewport pays a cold cache, and at 3x DPR that now includes the
+    // full comparison gallery. Poll until every image has decoded rather than
+    // waiting a fixed beat — a short wait reports good lazy images as broken.
     await page.waitForLoadState('networkidle').catch(() => {});
     await page
       .waitForFunction(
@@ -92,7 +92,53 @@ try {
       )
       .catch(() => {});
 
-    const report = await page.evaluate(() => {
+    // Exercise every scenario even though the compact gallery only keeps one
+    // comparison mounted at a time. This catches broken non-default fixtures
+    // and verifies that all six selectors really swap the evidence panel.
+    const scenarioResults = [];
+    const exampleOptions = page.locator('[data-example-option]');
+    for (let index = 0; index < (await exampleOptions.count()); index++) {
+      const option = exampleOptions.nth(index);
+      await option.click();
+      await page
+        .waitForFunction(
+          (activeIndex) =>
+            document
+              .querySelectorAll('[data-example-option]')
+              [activeIndex]?.getAttribute('aria-pressed') === 'true',
+          index,
+          { timeout: 3000 }
+        )
+        .catch(() => {});
+      await page.locator('[data-example-compare]').scrollIntoViewIfNeeded();
+      await page
+        .waitForFunction(
+          () => {
+            const images = [
+              ...document.querySelectorAll('[data-example-compare] img'),
+            ];
+            return (
+              images.length === 2 &&
+              images.every((image) => image.complete && image.naturalWidth > 0)
+            );
+          },
+          undefined,
+          { timeout: 8000 }
+        )
+        .catch(() => {});
+      scenarioResults.push(
+        await page.evaluate(() => ({
+          title:
+            document
+              .querySelector('[data-example-option][aria-pressed="true"]')
+              ?.textContent?.trim() ?? '',
+          imagesReady: [
+            ...document.querySelectorAll('[data-example-compare] img'),
+          ].every((image) => image.complete && image.naturalWidth > 0),
+        }))
+      );
+    }
+    const report = await page.evaluate(async () => {
       const h1 = document.querySelector('h1');
       const h2 = document.querySelector('h2');
       const cs = (el) => (el ? getComputedStyle(el) : null);
@@ -116,30 +162,47 @@ try {
       // After the scroll pass anything still at naturalWidth 0 is genuinely
       // broken — an unloaded lazy image is no longer an excuse.
       //
-      // `needed` is in *device* pixels: comparing naturalWidth against the CSS
-      // width alone reports every correctly-sized retina asset as 2-3x
-      // "oversized", which is how these images were first mis-flagged.
-      const imgs = [...document.querySelectorAll('img')].map((i) => {
-        const css = i.getBoundingClientRect().width;
-        return {
-          src: i.getAttribute('src'),
-          natural: i.naturalWidth,
-          rendered: Math.round(css),
-          needed: Math.round(css * window.devicePixelRatio),
-          broken: i.naturalWidth === 0,
-        };
-      });
+      // `naturalWidth` is density-corrected when srcset width descriptors are
+      // active, so it is not the physical pixel width of the selected file.
+      // Decode currentSrc as an ImageBitmap to inspect the real asset instead;
+      // otherwise a correct 1280 px retina source can be reported as 427 px.
+      const imgs = await Promise.all(
+        [...document.querySelectorAll('img')].map(async (i) => {
+          const css = i.getBoundingClientRect().width;
+          let physicalWidth = i.naturalWidth;
+          try {
+            const response = await fetch(i.currentSrc, {
+              cache: 'force-cache',
+            });
+            const bitmap = await createImageBitmap(await response.blob());
+            physicalWidth = bitmap.width;
+            bitmap.close();
+          } catch {
+            // Keep the browser-reported fallback for formats ImageBitmap cannot
+            // decode; broken images remain caught by naturalWidth === 0.
+          }
+          return {
+            src: i.getAttribute('src'),
+            natural: physicalWidth,
+            rendered: Math.round(css),
+            needed: Math.round(css * window.devicePixelRatio),
+            broken: i.naturalWidth === 0,
+          };
+        })
+      );
 
       const grain = [...document.querySelectorAll('.paper-grain')].length;
       const rules = [...document.querySelectorAll('.rule-fade')].length;
       const balanced = [...document.querySelectorAll('.text-balance')].length;
-      const primaryCta = [...document.querySelectorAll('button')].find(
-        (button) =>
-          /^Choose (a File|a Photo|a Video)$/.test(button.textContent.trim())
+      const primaryCta = document.querySelector(
+        '[role="button"][aria-label^="Choose "]'
       );
-      const ctaRect = primaryCta?.getBoundingClientRect();
+      const visualCta = primaryCta?.querySelector('[data-file-cta]');
+      const ctaRect = visualCta?.getBoundingClientRect();
       const brand =
         document.querySelector('header a')?.textContent?.trim() ?? '';
+      const tool = document.querySelector('#tool');
+      const gallery = document.querySelector('[data-example-gallery]');
 
       return {
         h1: h1 && {
@@ -160,12 +223,18 @@ try {
         brand,
         primaryCta: ctaRect
           ? {
-              label: primaryCta.textContent.trim(),
+              label: primaryCta.getAttribute('aria-label'),
               top: Math.round(ctaRect.top + window.scrollY),
               bottom: Math.round(ctaRect.bottom + window.scrollY),
               height: Math.round(ctaRect.height),
             }
           : null,
+        exampleCount: document.querySelectorAll('[data-example-compare]')
+          .length,
+        exampleOptionCount: document.querySelectorAll('[data-example-option]')
+          .length,
+        galleryImmediatelyAfterTool: tool?.nextElementSibling === gallery,
+        sampleCta: Boolean(document.querySelector('[data-sample-cta]')),
       };
     });
 
@@ -205,6 +274,36 @@ try {
       console.log(
         `  ✓ primary CTA in first screen: ${report.primaryCta.label} y=${report.primaryCta.top}-${report.primaryCta.bottom}`
       );
+    }
+
+    if (
+      report.exampleCount !== 1 ||
+      report.exampleOptionCount !== 6 ||
+      scenarioResults.some((scenario) => !scenario.imagesReady) ||
+      new Set(scenarioResults.map((scenario) => scenario.title)).size !== 6
+    ) {
+      console.log(
+        `  ✗ compact gallery: ${report.exampleCount} visible comparison, ${report.exampleOptionCount} options, ${scenarioResults.filter((scenario) => scenario.imagesReady).length}/6 scenarios loaded`
+      );
+      failures++;
+    } else {
+      console.log('  ✓ compact gallery: 1 comparison, 6 working scenarios');
+    }
+
+    if (!report.galleryImmediatelyAfterTool) {
+      console.log('  ✗ Before/After gallery is not immediately after the tool');
+      failures++;
+    } else {
+      console.log('  ✓ Before/After gallery immediately follows the tool');
+    }
+
+    if (!report.sampleCta) {
+      console.log(
+        '  ✗ bundled sample action missing from the empty tool state'
+      );
+      failures++;
+    } else {
+      console.log('  ✓ bundled sample action is available');
     }
 
     if (report.overflow > 0) {

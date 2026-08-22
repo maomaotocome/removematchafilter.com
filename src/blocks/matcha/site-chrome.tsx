@@ -29,6 +29,14 @@ export function MatchaFooter() {
           label: m['site.footer.trend'](),
           href: '/matcha-filter-trend',
         },
+        {
+          label: m['site.footer.tiktok'](),
+          href: '/remove-matcha-filter-tiktok',
+        },
+        {
+          label: m['site.footer.capcut'](),
+          href: '/remove-matcha-filter-capcut',
+        },
         { label: m['site.footer.faq'](), href: '/#faq' },
       ],
     },

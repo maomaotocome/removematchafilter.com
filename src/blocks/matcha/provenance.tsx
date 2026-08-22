@@ -72,7 +72,7 @@ export function Provenance() {
             <p className="text-foreground mt-5 text-sm font-medium">
               {m['home.sources_byline']()}
             </p>
-            <p className="text-muted-foreground mt-2 text-xs">
+            <p data-nosnippet="" className="text-muted-foreground mt-2 text-xs">
               {m['home.sources_published_label']()}{' '}
               <time dateTime={SITE_PUBLISHED_AT}>
                 {m['home.sources_published_date']()}

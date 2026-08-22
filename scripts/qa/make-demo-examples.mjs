@@ -17,10 +17,14 @@ const BASE = process.argv[2] || 'http://localhost:3000';
 const OUT = 'public/imgs/examples';
 mkdirSync(OUT, { recursive: true });
 
-/** Fixture → output slug. Both use the product's safe default preset. */
+/** Fixture → output slug. Every job uses the product's safe default preset. */
 const JOBS = [
-  { fixture: 'demo-portrait.png', slug: 'photo-portrait' },
-  { fixture: 'demo-flatlay.png', slug: 'photo-flatlay' },
+  { fixture: 'demo-example-portrait.png', slug: 'photo-portrait' },
+  { fixture: 'demo-example-creator.png', slug: 'photo-creator' },
+  { fixture: 'demo-example-friends.png', slug: 'photo-friends' },
+  { fixture: 'demo-example-city.png', slug: 'photo-city' },
+  { fixture: 'demo-example-product.png', slug: 'photo-product' },
+  { fixture: 'demo-example-food.png', slug: 'photo-food' },
 ];
 
 const browser = await launchChromium({
@@ -70,6 +74,10 @@ try {
       const height = original.naturalHeight;
       const smallWidth = 480;
       const smallHeight = Math.round((height / width) * smallWidth);
+      const mediumWidth = 640;
+      const mediumHeight = Math.round((height / width) * mediumWidth);
+      const largeWidth = 1024;
+      const largeHeight = Math.round((height / width) * largeWidth);
 
       return {
         before: encode(original, width, height, 'image/jpeg', 0.88),
@@ -102,6 +110,34 @@ try {
           'image/webp',
           0.8
         ),
+        beforeWebpMedium: encode(
+          original,
+          mediumWidth,
+          mediumHeight,
+          'image/webp',
+          0.81
+        ),
+        afterWebpMedium: encode(
+          adjusted,
+          mediumWidth,
+          mediumHeight,
+          'image/webp',
+          0.81
+        ),
+        beforeWebpLarge: encode(
+          original,
+          largeWidth,
+          largeHeight,
+          'image/webp',
+          0.82
+        ),
+        afterWebpLarge: encode(
+          adjusted,
+          largeWidth,
+          largeHeight,
+          'image/webp',
+          0.82
+        ),
       };
     });
     writeFileSync(
@@ -127,6 +163,22 @@ try {
     writeFileSync(
       `${OUT}/${job.slug}-after-480.webp`,
       Buffer.from(encoded.afterWebpSmall, 'base64')
+    );
+    writeFileSync(
+      `${OUT}/${job.slug}-before-640.webp`,
+      Buffer.from(encoded.beforeWebpMedium, 'base64')
+    );
+    writeFileSync(
+      `${OUT}/${job.slug}-after-640.webp`,
+      Buffer.from(encoded.afterWebpMedium, 'base64')
+    );
+    writeFileSync(
+      `${OUT}/${job.slug}-before-1024.webp`,
+      Buffer.from(encoded.beforeWebpLarge, 'base64')
+    );
+    writeFileSync(
+      `${OUT}/${job.slug}-after-1024.webp`,
+      Buffer.from(encoded.afterWebpLarge, 'base64')
     );
     console.log(`wrote ${job.slug} from ${job.fixture}`);
   }

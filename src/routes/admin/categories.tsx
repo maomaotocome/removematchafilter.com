@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import {
   keepPreviousData,
@@ -47,15 +47,20 @@ interface Category {
 
 const PAGE_SIZE = 20;
 
-const categorySchema = z.object({
-  slug: z.string().min(1),
-  title: z.string().min(1),
-  description: z.string(),
-});
-type CategoryForm = z.infer<typeof categorySchema>;
+type CategoryForm = { slug: string; title: string; description: string };
 const emptyForm: CategoryForm = { slug: '', title: '', description: '' };
 
 function CategoriesPage() {
+  const categorySchema = useMemo(
+    () =>
+      z.object({
+        slug: z.string().min(1),
+        title: z.string().min(1),
+        description: z.string(),
+      }),
+    []
+  );
+
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');

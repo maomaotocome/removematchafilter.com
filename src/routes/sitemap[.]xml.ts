@@ -12,6 +12,8 @@ const STATIC_PATHS = [
   '/from-video',
   '/matcha-filter-trend',
   '/how-to-remove-matcha-filter',
+  '/remove-matcha-filter-tiktok',
+  '/remove-matcha-filter-capcut',
   '/about',
   '/contact',
   '/privacy-policy',
@@ -70,7 +72,9 @@ export const Route = createFileRoute('/sitemap.xml')({
               : path.startsWith('/from-')
                 ? 0.9
                 : path === '/matcha-filter-trend' ||
-                    path === '/how-to-remove-matcha-filter'
+                    path === '/how-to-remove-matcha-filter' ||
+                    path === '/remove-matcha-filter-tiktok' ||
+                    path === '/remove-matcha-filter-capcut'
                   ? 0.8
                   : 0.5,
         }));

@@ -2,7 +2,7 @@
 
 - **Date:** 2026-08-16
 - **Design:** `docs/plans/2026-08-16-matcha-restoration-upgrade-design.md`
-- **Execution status:** Not started
+- **Execution status:** In progress — first P0/P1/P2 infrastructure slice
 
 **Current release:** Keep the deployed local WebGL tool unchanged until a gate
 below explicitly authorizes replacement.
@@ -51,18 +51,18 @@ controlled ad placement, but both P5 and the monetization gates must pass.
 Maintain this table during execution. Use links to committed aggregate reports,
 never links to private media.
 
-| Evidence                                  | Required before | Status      | Location |
-| ----------------------------------------- | --------------- | ----------- | -------- |
-| Baseline funnel and performance report    | P3              | Not started | —        |
-| Dataset card and rights audit             | P2              | Not started | —        |
-| Pilot manifest validation report          | P2              | Not started | —        |
-| Current renderer benchmark                | P4              | Not started | —        |
-| Candidate comparison report               | P5              | Not started | —        |
-| Locked holdout report                     | P5 release      | Not started | —        |
-| AI licence and vendor review              | P6 public beta  | Not started | —        |
-| AI cost/latency/identity report           | P6 public beta  | Not started | —        |
-| Ad experiment plan and rollback threshold | P7              | Not started | —        |
-| Credit demand and unit-economics report   | P7 paid AI      | Not started | —        |
+| Evidence                                  | Required before | Status                                                            | Location                                                |
+| ----------------------------------------- | --------------- | ----------------------------------------------------------------- | ------------------------------------------------------- |
+| Baseline funnel and performance report    | P3              | Partial: search/renderer frozen; consented product funnel pending | `docs/benchmarks/2026-08-16-matcha-current-baseline.md` |
+| Dataset card and rights audit             | P2              | Template complete; private audit blocked on real effect/media     | `docs/benchmarks/matcha-dataset-card-template.md`       |
+| Pilot manifest validation report          | P2              | Validator complete; real pilot not collected                      | `scripts/benchmark/`                                    |
+| Current renderer benchmark                | P4              | Harness and synthetic smoke complete; real baseline blocked       | `scripts/benchmark/run.mjs`                             |
+| Candidate comparison report               | P5              | Not started                                                       | —                                                       |
+| Locked holdout report                     | P5 release      | Not started                                                       | —                                                       |
+| AI licence and vendor review              | P6 public beta  | Not started                                                       | —                                                       |
+| AI cost/latency/identity report           | P6 public beta  | Not started                                                       | —                                                       |
+| Ad experiment plan and rollback threshold | P7              | Not started                                                       | —                                                       |
+| Credit demand and unit-economics report   | P7 paid AI      | Not started                                                       | —                                                       |
 
 ---
 
@@ -70,16 +70,16 @@ never links to private media.
 
 ## P0.1 Freeze the comparison baseline
 
-- [ ] Record the current commit, deployed Cloudflare version, deployment date,
+- [x] Record the current commit, deployed Cloudflare version, deployment date,
       and every uncommitted file without modifying or cleaning the worktree.
-- [ ] Record the current default parameters from
+- [x] Record the current default parameters from
       `src/lib/matcha/presets.ts` and hash the relevant renderer/analyser files.
-- [ ] Save aggregate 2026-08-15 GSC baselines for query, page, country, and
+- [x] Save aggregate 2026-08-15 GSC baselines for query, page, country, and
       device segments in a committed Markdown report; do not duplicate raw CSVs
       containing unnecessary data.
-- [ ] Define the five protected search intents: homepage, photo, video, guide,
+- [x] Define the five protected search intents: homepage, photo, video, guide,
       and trend.
-- [ ] Create a release annotation containing the quality-upgrade start date.
+- [x] Create a release annotation containing the quality-upgrade start date.
 
 **Acceptance criteria**
 
@@ -90,8 +90,8 @@ never links to private media.
 
 ## P0.2 Define safe analytics events
 
-- [ ] Write an event specification before adding code.
-- [ ] Use only these low-cardinality event names unless the specification is
+- [x] Write an event specification before adding code.
+- [x] Use only these low-cardinality event names unless the specification is
       reviewed:
   - `matcha_file_selected`
   - `matcha_render_ready`
@@ -103,13 +103,13 @@ never links to private media.
   - `matcha_ai_opt_in`
   - `matcha_ai_succeeded`
   - `matcha_ai_failed`
-- [ ] Allow only reviewed parameters such as `media_mode`, `size_bucket`,
+- [x] Allow only reviewed parameters such as `media_mode`, `size_bucket`,
       `duration_bucket`, `preset_id`, `processing_path`, and a bounded `error_code`.
-- [ ] Explicitly prohibit filename, file path, blob URL, media pixels, prompt,
+- [x] Explicitly prohibit filename, file path, blob URL, media pixels, prompt,
       free-text errors, face count, inferred demographics, and unique file hashes.
-- [ ] Use the existing delayed GA loader and ensure events queue safely before
+- [x] Use the existing delayed GA loader and ensure events queue safely before
       the external script finishes loading.
-- [ ] Add unit/browser tests proving prohibited values are not sent.
+- [x] Add unit/browser tests proving prohibited values are not sent.
 - [ ] Verify analytics consent and privacy-policy requirements for the actual
       deployment regions before enabling new events.
 
@@ -144,19 +144,19 @@ never links to private media.
 
 ## P1.1 Create dataset governance before collecting media
 
-- [ ] Add `/private-data/` and `/benchmark-results/raw/` to `.gitignore`.
-- [ ] Create committed documentation under `scripts/benchmark/` covering
+- [x] Add `/private-data/` and `/benchmark-results/raw/` to `.gitignore`.
+- [x] Create committed documentation under `scripts/benchmark/` covering
       allowed sources, consent, storage, deletion, and incident handling.
-- [ ] Create `scripts/benchmark/manifest.schema.json`.
-- [ ] Create a synthetic `manifest.example.jsonl` containing no real person or
+- [x] Create `scripts/benchmark/manifest.schema.json`.
+- [x] Create a synthetic `manifest.example.jsonl` containing no real person or
       private path.
 - [ ] Store actual media under
       `private-data/matcha-benchmark/v1/`; never under `public/`, `src/`, or tracked
       test-fixture directories.
 - [ ] Store consent/rights records separately from media, referenced by an
       anonymous `rights_id`.
-- [ ] Define a dataset deletion process by `pair_id` and `rights_id`.
-- [ ] Document who is allowed to access the private directory.
+- [x] Define a dataset deletion process by `pair_id` and `rights_id`.
+- [x] Document who is allowed to access the private directory.
 
 **Required manifest fields**
 
@@ -259,19 +259,19 @@ Preferred source order:
 
 ## P2.1 Create the benchmark command and output contract
 
-- [ ] Add `scripts/benchmark/run.mjs` with explicit dataset, candidate, split,
+- [x] Add `scripts/benchmark/run.mjs` with explicit dataset, candidate, split,
       and output arguments.
-- [ ] Add `scripts/benchmark/validate-manifest.mjs`.
-- [ ] Reuse the project's Playwright/Chromium image decoding and real WebGL
+- [x] Add `scripts/benchmark/validate-manifest.mjs`.
+- [x] Reuse the project's Playwright/Chromium image decoding and real WebGL
       renderer where practical; do not create a visually similar fake renderer.
-- [ ] Record tool commit, candidate ID, manifest hash, browser version, OS,
+- [x] Record tool commit, candidate ID, manifest hash, browser version, OS,
       timestamp, and parameters in every result.
-- [ ] Make deterministic runs deterministic: fixed seeds, ordered inputs, and
+- [x] Make deterministic runs deterministic: fixed seeds, ordered inputs, and
       stable transforms.
-- [ ] Write raw per-item results only to a gitignored directory.
+- [x] Write raw per-item results only to a gitignored directory.
 - [ ] Generate a committed aggregate JSON and human-readable Markdown report
       without private filenames or thumbnails.
-- [ ] Return non-zero when validation, decoding, candidate execution, or metric
+- [x] Return non-zero when validation, decoding, candidate execution, or metric
       coverage fails.
 
 Suggested command contract:
@@ -286,10 +286,10 @@ pnpm benchmark:matcha -- \
 
 ## P2.2 Implement paired-image normalization
 
-- [ ] Convert evaluation pixels to a defined colour space and document browser
+- [x] Convert evaluation pixels to a defined colour space and document browser
       colour-management limitations.
 - [ ] Align and crop both images to the common valid region.
-- [ ] Record the geometric transform and coverage percentage.
+- [x] Record the geometric transform and coverage percentage.
 - [ ] Exclude borders, app UI, watermarks, and padded pixels.
 - [ ] Refuse an objective comparison when alignment confidence is below the
       documented threshold; keep the item for human review if still useful.
@@ -299,18 +299,18 @@ pnpm benchmark:matcha -- \
 
 Primary metrics:
 
-- [ ] CIEDE2000 colour difference over the valid image region.
+- [x] CIEDE2000 colour difference over the valid image region.
 - [ ] CIEDE2000 over reviewed face/skin and neutral-reference ROIs where present.
-- [ ] Highlight/shadow clipping introduced by the candidate.
-- [ ] Structural similarity on luminance after alignment.
+- [x] Highlight/shadow clipping introduced by the candidate.
+- [x] Structural similarity on luminance after alignment.
 - [ ] Edge preservation and visible halo score around strong edges.
 
 Secondary diagnostics:
 
-- [ ] Per-channel mean and percentile error.
-- [ ] Saturation and luma-distribution error.
-- [ ] PSNR as a diagnostic, not the sole quality score.
-- [ ] Processing duration, peak canvas size, and failure class.
+- [x] Per-channel mean and percentile error.
+- [x] Saturation and luma-distribution error.
+- [x] PSNR as a diagnostic, not the sole quality score.
+- [x] Processing duration, peak canvas size, and failure class.
 
 Every metric needs a unit test using small deterministic colour patches with
 known expected values and tolerance. Do not accept metrics merely because they

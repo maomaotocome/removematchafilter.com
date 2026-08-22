@@ -142,6 +142,24 @@ function HowToRemoveMatchaFilterPage() {
           />
         </ArticleSection>
 
+        <LinkCards
+          title={m['platforms.title']()}
+          cards={[
+            {
+              href: '/remove-matcha-filter-tiktok',
+              title: m['platform.tiktok_card_title'](),
+              body: m['platform.tiktok_card_body'](),
+              cta: m['platform.tiktok_card_cta'](),
+            },
+            {
+              href: '/remove-matcha-filter-capcut',
+              title: m['platform.capcut_card_title'](),
+              body: m['platform.capcut_card_body'](),
+              cta: m['platform.capcut_card_cta'](),
+            },
+          ]}
+        />
+
         <ArticleSection title={m['guide.problems_title']()} tone="muted">
           <ExplainedList
             items={[

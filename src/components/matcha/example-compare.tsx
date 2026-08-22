@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 
 export interface ExampleItem {
   title: string;
@@ -9,6 +10,10 @@ export interface ExampleItem {
   afterWebp: string;
   beforeWebpSmall: string;
   afterWebpSmall: string;
+  beforeWebpMedium: string;
+  afterWebpMedium: string;
+  beforeWebpLarge: string;
+  afterWebpLarge: string;
   width: number;
   height: number;
 }
@@ -30,13 +35,13 @@ function Compare({
   const id = useId();
 
   return (
-    <figure>
+    <figure data-example-compare>
       <div className="border-border/80 bg-muted relative overflow-hidden rounded-xl border shadow-[0_1px_2px_rgba(0,0,0,0.04),0_10px_24px_-14px_rgba(0,0,0,0.15)]">
         <picture>
           <source
             type="image/webp"
-            srcSet={`${item.afterWebpSmall} 480w, ${item.afterWebp} ${item.width}w`}
-            sizes="(min-width: 640px) 494px, calc(100vw - 34px)"
+            srcSet={`${item.afterWebpSmall} 480w, ${item.afterWebpMedium} 640w, ${item.afterWebpLarge} 1024w, ${item.afterWebp} ${item.width}w`}
+            sizes="(min-width: 1024px) 640px, (min-width: 640px) calc(100vw - 64px), calc(100vw - 34px)"
           />
           <img
             src={item.after}
@@ -56,8 +61,8 @@ function Compare({
           <picture>
             <source
               type="image/webp"
-              srcSet={`${item.beforeWebpSmall} 480w, ${item.beforeWebp} ${item.width}w`}
-              sizes="(min-width: 640px) 494px, calc(100vw - 34px)"
+              srcSet={`${item.beforeWebpSmall} 480w, ${item.beforeWebpMedium} 640w, ${item.beforeWebpLarge} 1024w, ${item.beforeWebp} ${item.width}w`}
+              sizes="(min-width: 1024px) 640px, (min-width: 640px) calc(100vw - 64px), calc(100vw - 34px)"
             />
             <img
               src={item.before}
@@ -111,6 +116,8 @@ export function ExampleCompare({
   title,
   intro,
   honest,
+  sceneLabel,
+  ctaLabel,
   beforeLabel,
   afterLabel,
   items,
@@ -118,14 +125,22 @@ export function ExampleCompare({
   title: string;
   intro: string;
   honest: string;
+  sceneLabel: string;
+  ctaLabel: string;
   beforeLabel: string;
   afterLabel: string;
   items: ExampleItem[];
 }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const panelId = useId();
+  const activeItem = items[activeIndex] ?? items[0];
+
+  if (!activeItem) return null;
+
   return (
-    <section className="px-4 py-16 sm:py-24">
+    <section data-example-gallery className="paper-grain px-4 py-14 sm:py-20">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-10 max-w-2xl">
+        <div className="mb-8 max-w-2xl sm:mb-10">
           <h2 className="text-title font-serif font-normal text-balance">
             {title}
           </h2>
@@ -133,25 +148,74 @@ export function ExampleCompare({
             {intro}
           </p>
         </div>
-        <div className="grid gap-10 sm:grid-cols-2 sm:gap-8">
-          {items.map((item) => (
+
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(16rem,0.8fr)] lg:gap-10">
+          <div className="order-first min-w-0 lg:col-start-2 lg:row-start-1">
+            <p className="text-muted-foreground mb-3 hidden text-[11px] font-medium tracking-[0.18em] uppercase lg:block">
+              {sceneLabel}
+            </p>
+            <div
+              role="group"
+              aria-label={sceneLabel}
+              className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] lg:block lg:overflow-hidden lg:rounded-xl lg:border lg:pb-0 [&::-webkit-scrollbar]:hidden"
+            >
+              {items.map((item, index) => (
+                <button
+                  key={item.title}
+                  type="button"
+                  data-example-option
+                  aria-label={item.title}
+                  aria-pressed={item === activeItem}
+                  aria-controls={panelId}
+                  onClick={() => setActiveIndex(index)}
+                  className="aria-pressed:bg-primary aria-pressed:text-primary-foreground border-border bg-background hover:bg-accent min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors lg:block lg:w-full lg:rounded-none lg:border-0 lg:border-b lg:px-4 lg:py-3.5 lg:text-left lg:last:border-b-0"
+                >
+                  <span className="block text-[14px] leading-5 font-semibold">
+                    {item.title}
+                  </span>
+                  <span
+                    className={`mt-1 hidden text-[12.5px] leading-[1.55] lg:line-clamp-2 ${
+                      item === activeItem
+                        ? 'text-primary-foreground/75'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {item.body}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div
+            id={panelId}
+            aria-live="polite"
+            className="min-w-0 lg:col-start-1 lg:row-start-1"
+          >
             <Compare
-              key={item.title}
-              item={item}
+              key={activeItem.title}
+              item={activeItem}
               beforeLabel={beforeLabel}
               afterLabel={afterLabel}
             />
-          ))}
+          </div>
         </div>
-        {/* The caveat is part of the argument, not fine print — but it stays
-            visually subordinate to the comparisons themselves. */}
-        <p className="text-muted-foreground mt-12 max-w-2xl text-[14.5px] leading-[1.7]">
-          <span
-            aria-hidden="true"
-            className="bg-border mr-3 inline-block h-px w-6 align-middle"
-          />
-          {honest}
-        </p>
+
+        {/* The caveat is part of the argument, not fine print. Pairing it with
+            a return-to-tool action closes the proof loop without pretending
+            these synthetic fixtures are customer testimonials. */}
+        <div className="border-border mt-10 flex flex-col gap-5 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-muted-foreground max-w-2xl text-[14.5px] leading-[1.7]">
+            {honest}
+          </p>
+          <a
+            href="#tool"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-full px-5 text-sm font-medium transition-colors sm:self-auto"
+          >
+            {ctaLabel}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </a>
+        </div>
       </div>
     </section>
   );

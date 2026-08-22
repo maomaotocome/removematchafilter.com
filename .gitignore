@@ -65,4 +65,8 @@ package-lock.json
 
 # Runtime image uploads (no-storage local fallback)
 /public/uploads/
+
+# Private benchmark inputs and non-aggregate evaluation output
+/private-data/
+/benchmark-results/raw/
 .gstack/

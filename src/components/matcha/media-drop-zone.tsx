@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent } from 'react';
+import { useId, useState, type DragEvent } from 'react';
 import { ImageIcon, ShieldCheck, UploadCloud, VideoIcon } from 'lucide-react';
 
 import type { MediaMode } from '@/lib/matcha';
@@ -29,10 +29,13 @@ export function MediaDropZone({
   onFile: (file: File) => void;
   disabled?: boolean;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const titleId = useId();
+  const ctaId = useId();
+  const descriptionId = useId();
+  const privacyId = useId();
   const [dragging, setDragging] = useState(false);
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setDragging(false);
     if (disabled) return;
@@ -43,7 +46,8 @@ export function MediaDropZone({
   const Icon = mode === 'video' ? VideoIcon : ImageIcon;
 
   return (
-    <div
+    <label
+      aria-disabled={disabled || undefined}
       onDragOver={(event) => {
         event.preventDefault();
         if (!disabled) setDragging(true);
@@ -51,9 +55,9 @@ export function MediaDropZone({
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       className={cn(
-        'border-border bg-card/50 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-5 py-7 text-center transition-colors sm:gap-4 sm:px-6 sm:py-10',
+        'group border-border bg-card/50 focus-within:ring-ring flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-5 py-7 text-center transition-colors focus-within:ring-2 focus-within:ring-offset-2 focus-within:outline-none sm:gap-4 sm:px-6 sm:py-10',
         dragging && 'border-primary bg-primary/5',
-        disabled && 'opacity-60'
+        disabled && 'cursor-not-allowed opacity-60'
       )}
     >
       {localBadge && (
@@ -66,28 +70,37 @@ export function MediaDropZone({
         <Icon className="size-5 sm:size-6" strokeWidth={1.75} />
       </div>
       <div className="space-y-1.5">
-        <p className="text-base font-medium">{title}</p>
-        <p className="text-muted-foreground mx-auto max-w-sm text-sm leading-relaxed">
+        <p id={titleId} className="text-base font-medium">
+          {title}
+        </p>
+        <p
+          id={descriptionId}
+          className="text-muted-foreground mx-auto max-w-sm text-sm leading-relaxed"
+        >
           {description}
         </p>
       </div>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => inputRef.current?.click()}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-full px-6 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed"
+      <span
+        data-file-cta
+        id={ctaId}
+        className="bg-primary text-primary-foreground group-hover:bg-primary/90 inline-flex h-11 items-center gap-2 rounded-full px-6 text-sm font-medium transition-colors"
       >
         <UploadCloud className="size-4" />
         {browseLabel}
-      </button>
-      <p className="text-muted-foreground max-w-sm text-xs leading-relaxed">
+      </span>
+      <p
+        id={privacyId}
+        className="text-muted-foreground max-w-sm text-xs leading-relaxed"
+      >
         {privacyNote}
       </p>
       <input
-        ref={inputRef}
         type="file"
         accept={accept}
-        className="hidden"
+        disabled={disabled}
+        aria-labelledby={`${titleId} ${ctaId}`}
+        aria-describedby={`${descriptionId} ${privacyId}`}
+        className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0];
           // Reset so re-picking the same file still fires a change event.
@@ -95,6 +108,6 @@ export function MediaDropZone({
           if (file) onFile(file);
         }}
       />
-    </div>
+    </label>
   );
 }

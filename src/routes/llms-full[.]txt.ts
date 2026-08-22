@@ -31,6 +31,16 @@ const STATIC_PAGES: { path: string; title: string; description: string }[] = [
     description: 'Step-by-step guide for photos and videos',
   },
   {
+    path: '/remove-matcha-filter-tiktok',
+    title: 'Remove Matcha Filter from a TikTok Video',
+    description: 'Source-aware local correction workflow for TikTok videos',
+  },
+  {
+    path: '/remove-matcha-filter-capcut',
+    title: 'Remove Matcha Filter in CapCut',
+    description: 'Source-first guide for editable projects and baked exports',
+  },
+  {
     path: '/about',
     title: 'About Remove Matcha Filter',
     description: 'Team, methodology, primary sources and editorial policy',
