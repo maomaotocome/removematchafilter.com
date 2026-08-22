@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -19,10 +19,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const profileSchema = z.object({
-  name: z.string().min(1),
-});
-
 export function SettingsForm({
   name: initialName,
   email,
@@ -32,6 +28,14 @@ export function SettingsForm({
   email: string;
   image: string;
 }) {
+  const profileSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1),
+      }),
+    []
+  );
+
   const [image, setImage] = useState(initialImage);
   const queryClient = useQueryClient();
 

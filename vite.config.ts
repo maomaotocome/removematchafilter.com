@@ -98,9 +98,7 @@ export default defineConfig({
         },
       ],
     }),
-    tanstackStart({
-      srcDirectory: 'src',
-    }),
+    tanstackStart({ srcDirectory: 'src' }),
     viteReact(),
     nitro(),
   ],

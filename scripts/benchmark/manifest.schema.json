@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://removematchafilter.com/schemas/matcha-benchmark-manifest-item-v1.json",
+  "title": "Matcha paired benchmark manifest item",
+  "description": "One rights-cleared original/filtered media pair. A JSONL manifest contains one item per non-empty line.",
+  "$comment": "Personal names, handles, profile/source URLs, GPS, precise location, sensitive-trait labels, free-form personal descriptions, face embeddings, and device serial numbers are prohibited. Unknown properties are rejected.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pair_id",
+    "record_status",
+    "source_kind",
+    "media_type",
+    "scene_category",
+    "capture_group_id",
+    "original_path",
+    "filtered_path",
+    "original_sha256",
+    "filtered_sha256",
+    "original_metadata",
+    "filtered_metadata",
+    "capture_device_family",
+    "filter_name",
+    "observed_app_version",
+    "capture_date",
+    "export_path_description",
+    "lighting_category",
+    "dominant_green",
+    "compression_generation",
+    "contains_minors",
+    "contains_sexual_or_intimate_content",
+    "has_adult_faces",
+    "face_count_bucket",
+    "metadata_sanitization",
+    "rights_id",
+    "allowed_uses",
+    "rights_expires_on",
+    "scheduled_deletion_on",
+    "split",
+    "normalization_status",
+    "alignment_status",
+    "rejection_reason"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "pair_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$"
+    },
+    "record_status": {
+      "enum": ["accepted", "rejected"]
+    },
+    "source_kind": {
+      "enum": [
+        "controlled_consent",
+        "product_owner_rights",
+        "licensed_transformation_rights",
+        "volunteered_consent",
+        "synthetic"
+      ]
+    },
+    "media_type": {
+      "enum": ["photo", "video"]
+    },
+    "scene_category": {
+      "enum": [
+        "single_portrait_selfie",
+        "group_lifestyle",
+        "indoor_warm_low_light",
+        "outdoor_sky_greenery",
+        "product_food_no_person"
+      ]
+    },
+    "capture_group_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$"
+    },
+    "original_path": {
+      "type": "string",
+      "pattern": "^private-data/matcha-benchmark/v1/[A-Za-z0-9._/-]+$",
+      "maxLength": 512
+    },
+    "filtered_path": {
+      "type": "string",
+      "pattern": "^private-data/matcha-benchmark/v1/[A-Za-z0-9._/-]+$",
+      "maxLength": 512
+    },
+    "original_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "filtered_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "original_metadata": {
+      "$ref": "#/$defs/mediaMetadata"
+    },
+    "filtered_metadata": {
+      "$ref": "#/$defs/mediaMetadata"
+    },
+    "capture_device_family": {
+      "enum": [
+        "iphone_family",
+        "android_phone_family",
+        "ipad_family",
+        "android_tablet_family",
+        "desktop_capture",
+        "other_documented_family",
+        "synthetic_fixture"
+      ]
+    },
+    "filter_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "observed_app_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "capture_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "export_path_description": {
+      "enum": [
+        "in_app_export",
+        "system_share_sheet",
+        "camera_roll_export",
+        "browser_download",
+        "screen_recording",
+        "other_documented_export"
+      ]
+    },
+    "lighting_category": {
+      "enum": [
+        "daylight",
+        "warm_indoor",
+        "cool_indoor",
+        "mixed_light",
+        "low_light",
+        "controlled_studio"
+      ]
+    },
+    "dominant_green": {
+      "type": "boolean"
+    },
+    "compression_generation": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "contains_minors": {
+      "const": false
+    },
+    "contains_sexual_or_intimate_content": {
+      "const": false
+    },
+    "has_adult_faces": {
+      "type": "boolean"
+    },
+    "face_count_bucket": {
+      "enum": ["none", "one", "two", "three_plus"]
+    },
+    "metadata_sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exif_status",
+        "gps_status",
+        "device_serial_status",
+        "account_identifiers_status",
+        "audio_status"
+      ],
+      "properties": {
+        "exif_status": {
+          "enum": ["removed", "not_present"]
+        },
+        "gps_status": {
+          "enum": ["removed", "not_present"]
+        },
+        "device_serial_status": {
+          "enum": ["removed", "not_present"]
+        },
+        "account_identifiers_status": {
+          "enum": ["removed", "not_present"]
+        },
+        "audio_status": {
+          "enum": ["not_applicable", "absent", "removed", "rights_cleared"]
+        }
+      }
+    },
+    "rights_id": {
+      "type": "string",
+      "pattern": "^rights-[a-z0-9][a-z0-9._-]{2,63}$"
+    },
+    "allowed_uses": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "benchmark_evaluation",
+          "algorithm_calibration",
+          "product_improvement",
+          "blind_human_review",
+          "internal_aggregate_reporting"
+        ]
+      }
+    },
+    "rights_expires_on": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "scheduled_deletion_on": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "split": {
+      "enum": ["calibration", "validation", "holdout"]
+    },
+    "normalization_status": {
+      "enum": ["pending", "complete", "failed"]
+    },
+    "alignment_status": {
+      "enum": ["not_required", "pending", "aligned", "failed"]
+    },
+    "rejection_reason": {
+      "enum": [
+        null,
+        "metadata_not_stripped",
+        "duplicate_media",
+        "unrecoverable_occlusion",
+        "scene_mismatch",
+        "frame_mismatch",
+        "alignment_failed",
+        "decode_failed",
+        "unsupported_media",
+        "audio_rights_unavailable",
+        "other_governance_failure"
+      ]
+    }
+  },
+  "$defs": {
+    "mediaMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "mime_type"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "mime_type": {
+          "type": "string",
+          "pattern": "^(image|video)/[a-z0-9.+-]+$"
+        },
+        "fps": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 240
+        },
+        "duration_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 600
+        },
+        "codec": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "has_audio": {
+          "type": "boolean"
+        }
+      }
+    },
+    "photoMetadata": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/mediaMetadata"
+        },
+        {
+          "properties": {
+            "mime_type": {
+              "pattern": "^image/"
+            }
+          },
+          "not": {
+            "anyOf": [
+              { "required": ["fps"] },
+              { "required": ["duration_seconds"] },
+              { "required": ["codec"] },
+              { "required": ["has_audio"] }
+            ]
+          }
+        }
+      ]
+    },
+    "videoMetadata": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/mediaMetadata"
+        },
+        {
+          "required": ["fps", "duration_seconds", "codec", "has_audio"],
+          "properties": {
+            "mime_type": {
+              "pattern": "^video/"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "media_type": { "const": "photo" }
+        },
+        "required": ["media_type"]
+      },
+      "then": {
+        "properties": {
+          "original_metadata": { "$ref": "#/$defs/photoMetadata" },
+          "filtered_metadata": { "$ref": "#/$defs/photoMetadata" },
+          "metadata_sanitization": {
+            "properties": {
+              "audio_status": { "const": "not_applicable" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "media_type": { "const": "video" }
+        },
+        "required": ["media_type"]
+      },
+      "then": {
+        "properties": {
+          "original_metadata": { "$ref": "#/$defs/videoMetadata" },
+          "filtered_metadata": { "$ref": "#/$defs/videoMetadata" },
+          "metadata_sanitization": {
+            "properties": {
+              "audio_status": {
+                "enum": ["absent", "removed", "rights_cleared"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

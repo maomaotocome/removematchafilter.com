@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import {
   keepPreviousData,
@@ -51,15 +51,20 @@ interface Permission {
 
 const PAGE_SIZE = 20;
 
-const roleSchema = z.object({
-  name: z.string().min(1),
-  title: z.string().min(1),
-  description: z.string(),
-});
-type RoleForm = z.infer<typeof roleSchema>;
+type RoleForm = { name: string; title: string; description: string };
 const emptyForm: RoleForm = { name: '', title: '', description: '' };
 
 function RolesPage() {
+  const roleSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1),
+        title: z.string().min(1),
+        description: z.string(),
+      }),
+    []
+  );
+
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');

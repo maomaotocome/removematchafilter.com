@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
@@ -22,12 +22,18 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 
-const signInSchema = z.object({
-  email: z.string().email(m['common.sign.email_placeholder']()),
-  password: z.string().min(1),
-});
-
 function SignInPage() {
+  // Keep route-only validation inside the split component. TanStack Start can
+  // then leave Zod out of the public-site entry and load it with this form.
+  const signInSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(m['common.sign.email_placeholder']()),
+        password: z.string().min(1),
+      }),
+    []
+  );
+
   const router = useRouter();
   const { data: session, isPending: sessionPending } = useSession();
   // Set right before we navigate so the already-signed-in effect doesn't also fire.

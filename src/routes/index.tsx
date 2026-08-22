@@ -55,27 +55,11 @@ function HomePage() {
           chooseFile={m['tool.cta_file']()}
         />
 
+        {/* Show the outcome immediately after the working tool. Visitors can
+            validate the result before reading the method or background. */}
+        <Examples />
+
         <RecoveryBoundary tone="muted" />
-
-        <ProseSection
-          title={m['home.trend_title']()}
-          paragraphs={[m['home.trend_body_1'](), m['home.trend_body_2']()]}
-        >
-          <InlineCta
-            href="/matcha-filter-trend"
-            label={m['home.trend_link']()}
-          />
-        </ProseSection>
-
-        <ProseSection
-          title={m['home.naming_title']()}
-          paragraphs={[m['home.naming_body'](), m['home.naming_body_2']()]}
-          tone="muted"
-        />
-
-        {/* Two adjacent untinted sections need a divider; tone="muted" blocks
-            already separate themselves with their background. */}
-        <hr className="rule-fade mx-auto max-w-2xl" />
 
         <ProseSection id="how-it-works" title={m['home.how_title']()}>
           <StepList
@@ -96,7 +80,11 @@ function HomePage() {
           />
         </ProseSection>
 
-        <hr className="rule-fade mx-auto max-w-5xl" />
+        <ProseSection
+          title={m['home.privacy_title']()}
+          paragraphs={[m['home.privacy_body']()]}
+          tone="muted"
+        />
 
         <LinkCards
           title={m['home.paths_title']()}
@@ -116,17 +104,39 @@ function HomePage() {
           ]}
         />
 
-        <Examples />
+        <LinkCards
+          title={m['platforms.title']()}
+          cards={[
+            {
+              href: '/remove-matcha-filter-tiktok',
+              title: m['platform.tiktok_card_title'](),
+              body: m['platform.tiktok_card_body'](),
+              cta: m['platform.tiktok_card_cta'](),
+            },
+          ]}
+        />
+
+        <FaqList id="faq" title={m['home.faq_title']()} items={faqItems()} />
 
         <ProseSection
-          title={m['home.privacy_title']()}
-          paragraphs={[m['home.privacy_body']()]}
+          title={m['home.trend_title']()}
+          paragraphs={[m['home.trend_body_1'](), m['home.trend_body_2']()]}
+        >
+          <InlineCta
+            href="/matcha-filter-trend"
+            label={m['home.trend_link']()}
+          />
+        </ProseSection>
+
+        <ProseSection
+          title={m['home.naming_title']()}
+          paragraphs={[m['home.naming_body'](), m['home.naming_body_2']()]}
           tone="muted"
         />
 
         <Provenance />
 
-        <FaqList id="faq" title={m['home.faq_title']()} items={faqItems()} />
+        <hr className="rule-fade mx-auto max-w-5xl" />
 
         <LinkCards
           title={m['home.learn_title']()}

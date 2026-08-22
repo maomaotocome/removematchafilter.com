@@ -27,7 +27,7 @@ import { LinkCards } from '@/components/matcha/link-cards';
 import { StepList } from '@/components/matcha/prose-section';
 
 const PUBLISHED_AT = '2026-08-09';
-const MODIFIED_AT = '2026-08-15';
+const MODIFIED_AT = '2026-08-22';
 
 function faqItems(locale?: ReturnType<typeof getLocale>) {
   const o = { locale };
@@ -191,6 +191,18 @@ function MatchaFilterTrendPage() {
               title: m['home.paths_video_title'](),
               body: m['home.paths_video_body'](),
               cta: m['home.paths_video_cta'](),
+            },
+            {
+              href: '/remove-matcha-filter-tiktok',
+              title: m['platform.tiktok_card_title'](),
+              body: m['platform.tiktok_card_body'](),
+              cta: m['platform.tiktok_card_cta'](),
+            },
+            {
+              href: '/remove-matcha-filter-capcut',
+              title: m['platform.capcut_card_title'](),
+              body: m['platform.capcut_card_body'](),
+              cta: m['platform.capcut_card_cta'](),
             },
           ]}
         />

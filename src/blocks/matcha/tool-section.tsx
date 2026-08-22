@@ -55,6 +55,8 @@ export function toolCopy(chooseFile?: string): MatchaToolCopy {
     webglUnsupported: m['tool.webgl_unsupported'](),
     videoExportUnsupported: m['tool.video_export_unsupported'](),
     loading: m['tool.loading'](),
+    samplePhoto: m['tool.sample_photo'](),
+    sampleError: m['tool.sample_error'](),
   };
 }
 

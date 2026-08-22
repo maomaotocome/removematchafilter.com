@@ -11,6 +11,52 @@ import { paraglideMiddleware } from './paraglide/server.js';
 const CF_WORKERS_MODULE = 'cloudflare:workers';
 let cfEnvPromise: Promise<void> | null = null;
 
+const CANONICAL_PUBLIC_PATHS = new Set(
+  [
+    '/',
+    '/from-photo',
+    '/from-video',
+    '/matcha-filter-trend',
+    '/how-to-remove-matcha-filter',
+    '/remove-matcha-filter-tiktok',
+    '/remove-matcha-filter-capcut',
+    '/about',
+    '/contact',
+    '/privacy-policy',
+    '/terms-of-service',
+  ].flatMap((path) => (path === '/' ? ['/', '/zh'] : [path, `/zh${path}`]))
+);
+
+const SECURITY_HEADERS = {
+  'Strict-Transport-Security': 'max-age=31536000',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+} as const;
+
+function withSecurityHeaders(response: Response): Response {
+  try {
+    for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+      response.headers.set(name, value);
+    }
+    return response;
+  } catch {
+    // Some platform-created responses (notably redirects) expose immutable
+    // headers. Rebuild only those responses so normal handler responses keep
+    // their native header semantics, including multiple Set-Cookie values.
+    const headers = new Headers(response.headers);
+    for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+      headers.set(name, value);
+    }
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+}
+
 function ensureCloudflareEnv(): Promise<void> {
   if (!cfEnvPromise) {
     cfEnvPromise = import(/* @vite-ignore */ CF_WORKERS_MODULE)
@@ -29,8 +75,45 @@ function ensureCloudflareEnv(): Promise<void> {
 export default {
   async fetch(req: Request): Promise<Response> {
     await ensureCloudflareEnv();
-    const response = await paraglideMiddleware(req, () => handler.fetch(req));
-    const utmSource = new URL(req.url).searchParams.get('utm_source');
+    const requestUrl = new URL(req.url);
+    const lowercasePath = requestUrl.pathname.toLowerCase();
+    const canonicalPath =
+      lowercasePath.length > 1
+        ? lowercasePath.replace(/\/+$/, '')
+        : lowercasePath;
+    const isChinesePath = /^\/zh(?:\/|$)/.test(canonicalPath);
+    const localeFreePath = canonicalPath.replace(/^\/zh(?=\/|$)/, '') || '/';
+
+    // The inherited ShipAny pricing and blog pages are demo surfaces, not
+    // part of this free tool. Keep their implementation available for future
+    // real products, but never expose template offers or articles publicly.
+    if (
+      localeFreePath === '/pricing' ||
+      localeFreePath === '/blog' ||
+      localeFreePath.startsWith('/blog/')
+    ) {
+      requestUrl.pathname = isChinesePath ? '/zh' : '/';
+      return withSecurityHeaders(Response.redirect(requestUrl, 308));
+    }
+    if (
+      CANONICAL_PUBLIC_PATHS.has(canonicalPath) &&
+      requestUrl.pathname !== canonicalPath
+    ) {
+      requestUrl.pathname = canonicalPath;
+      return withSecurityHeaders(Response.redirect(requestUrl, 308));
+    }
+    if (
+      /^\/zh\/(?:api(?:\/|$)|ads\.txt$|robots\.txt$|sitemap\.xml$|llms(?:-full)?\.txt$)/i.test(
+        requestUrl.pathname
+      )
+    ) {
+      requestUrl.pathname = requestUrl.pathname.replace(/^\/zh/i, '');
+      return withSecurityHeaders(Response.redirect(requestUrl, 308));
+    }
+    const response = withSecurityHeaders(
+      await paraglideMiddleware(req, () => handler.fetch(req))
+    );
+    const utmSource = requestUrl.searchParams.get('utm_source');
     const existing = getCookieFromHeader(
       req.headers.get('cookie'),
       'utm_source'

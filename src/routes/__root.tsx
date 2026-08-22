@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import {
@@ -7,6 +7,7 @@ import {
   HeadContent,
   Outlet,
   Scripts,
+  useLocation,
   type ErrorComponentProps,
 } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
@@ -16,16 +17,29 @@ import { ThemeProvider } from 'next-themes';
 import { envConfigs } from '@/config';
 import { getQueryClient } from '@/lib/query-client';
 import { getLocale } from '@/paraglide/runtime.js';
+import { AnalyticsConsentBlock } from '@/blocks/matcha/analytics-consent';
 import { Ads } from '@/components/analytics/ads';
-import { GoogleAnalytics } from '@/components/analytics/google-analytics';
-import { Plausible } from '@/components/analytics/plausible';
 import { CustomerService } from '@/components/customer-service';
-import { GoogleOneTap } from '@/components/google-one-tap';
 import { SandboxPreviewBridge } from '@/components/sandbox-preview-bridge';
-import { Toaster } from '@/components/ui/sonner';
 
 import '@fontsource/libre-baskerville/400.css';
 import '@/styles/globals.css';
+
+const Toaster = lazy(() =>
+  import('@/components/ui/sonner').then(({ Toaster: Component }) => ({
+    default: Component,
+  }))
+);
+
+function routeUsesToasts(pathname: string) {
+  const path = pathname.replace(/^\/zh(?=\/|$)/, '') || '/';
+  return (
+    path === '/pricing' ||
+    path === '/verify-email' ||
+    path.startsWith('/settings') ||
+    path.startsWith('/admin')
+  );
+}
 
 // Analytics IDs live in the DB config (1h-cached service). Fetched via a
 // server function so drizzle/db code never reaches the client bundle.
@@ -59,12 +73,35 @@ export const Route = createRootRoute({
       meta: [
         { charSet: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'theme-color', content: '#1c1b18' },
         { title: envConfigs.app_name },
         { name: 'description', content: envConfigs.app_description },
       ],
       links: [
-        { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-        { rel: 'apple-touch-icon', href: '/favicon.svg' },
+        {
+          rel: 'icon',
+          href: '/favicon.ico',
+          type: 'image/x-icon',
+          sizes: 'any',
+        },
+        {
+          rel: 'icon',
+          href: '/favicon-96x96.png',
+          type: 'image/png',
+          sizes: '96x96',
+        },
+        {
+          rel: 'icon',
+          href: '/favicon.svg',
+          type: 'image/svg+xml',
+          sizes: 'any',
+        },
+        {
+          rel: 'apple-touch-icon',
+          href: '/apple-touch-icon.png',
+          sizes: '180x180',
+        },
+        { rel: 'manifest', href: '/site.webmanifest' },
       ],
     };
   },
@@ -76,6 +113,7 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const analytics = Route.useLoaderData();
+  const pathname = useLocation({ select: (location) => location.pathname });
 
   return (
     <QueryClientProvider client={getQueryClient()}>
@@ -87,15 +125,18 @@ function RootComponent() {
       >
         <Outlet />
         <SandboxPreviewBridge />
-        <Toaster position="top-center" richColors />
-        <GoogleOneTap />
-        {analytics?.gaId ? (
-          <GoogleAnalytics measurementId={analytics.gaId} />
+        {routeUsesToasts(pathname) ? (
+          <Suspense fallback={null}>
+            <Toaster position="top-center" richColors />
+          </Suspense>
         ) : null}
-        {analytics?.plausibleDomain || analytics?.plausibleSrc ? (
-          <Plausible
-            domain={analytics.plausibleDomain}
-            src={analytics.plausibleSrc || undefined}
+        {analytics?.gaId ||
+        analytics?.plausibleDomain ||
+        analytics?.plausibleSrc ? (
+          <AnalyticsConsentBlock
+            gaMeasurementId={analytics.gaId || undefined}
+            plausibleDomain={analytics.plausibleDomain || undefined}
+            plausibleSrc={analytics.plausibleSrc || undefined}
           />
         ) : null}
         {analytics?.adsenseCode ? <Ads code={analytics.adsenseCode} /> : null}

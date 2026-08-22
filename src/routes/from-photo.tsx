@@ -55,20 +55,6 @@ function FromPhotoPage() {
           chooseFile={m['tool.cta_photo']()}
         />
 
-        <Examples />
-
-        <RecoveryBoundary tone="muted" />
-
-        <ProseSection id="how-it-works" title={m['home.how_title']()}>
-          <StepList
-            steps={[
-              { title: m['home.how_1_title'](), body: m['home.how_1_body']() },
-              { title: m['home.how_2_title'](), body: m['home.how_2_body']() },
-              { title: m['home.how_3_title'](), body: m['home.how_3_body']() },
-            ]}
-          />
-        </ProseSection>
-
         <ProseSection
           title={m['photo.body_title']()}
           paragraphs={[
@@ -99,6 +85,20 @@ function FromPhotoPage() {
           />
         </ProseSection>
 
+        <Examples />
+
+        <RecoveryBoundary tone="muted" />
+
+        <ProseSection id="how-it-works" title={m['home.how_title']()}>
+          <StepList
+            steps={[
+              { title: m['home.how_1_title'](), body: m['home.how_1_body']() },
+              { title: m['home.how_2_title'](), body: m['home.how_2_body']() },
+              { title: m['home.how_3_title'](), body: m['home.how_3_body']() },
+            ]}
+          />
+        </ProseSection>
+
         <ProseSection title={m['photo.tips_title']()}>
           <TipList
             tips={[
@@ -114,7 +114,7 @@ function FromPhotoPage() {
           />
         </ProseSection>
 
-        <FaqList id="faq" title={m['home.faq_title']()} items={faqItems()} />
+        <FaqList id="faq" title={m['photo.faq_title']()} items={faqItems()} />
 
         <LinkCards
           title={m['home.related_title']()}

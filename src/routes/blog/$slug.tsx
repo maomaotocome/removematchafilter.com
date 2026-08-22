@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import { createFileRoute, notFound, redirect } from '@tanstack/react-router';
 import { MDXProvider } from '@mdx-js/react';
 import { ArrowLeft, Calendar } from 'lucide-react';
 
@@ -14,6 +14,9 @@ import { formatPostDate, loadLocalPost } from '@/content/posts';
 import { getBlogPostFn } from '@/content/posts/server';
 
 export const Route = createFileRoute('/blog/$slug')({
+  beforeLoad: () => {
+    throw redirect({ to: '/', replace: true });
+  },
   loader: async ({ params }) => {
     const locale = getLocale();
     const post = await getBlogPostFn({
@@ -32,6 +35,7 @@ export const Route = createFileRoute('/blog/$slug')({
       meta: [
         { title: `${post.title} | ${envConfigs.app_name}` },
         { name: 'description', content: post.description },
+        { name: 'robots', content: 'noindex, follow' },
       ],
       links: [{ rel: 'canonical', href: canonical }],
     };

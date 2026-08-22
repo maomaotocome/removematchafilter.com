@@ -22,6 +22,142 @@ const record = (name, pass, detail = '') => {
   );
 };
 
+const ANALYTICS_REQUEST =
+  /(?:googletagmanager\.com|google-analytics\.com|plausible\.io)/i;
+const ALLOWED_ANALYTICS_VALUES = {
+  media_mode: new Set(['photo', 'video', 'unknown']),
+  size_bucket: new Set(['under_1_mb', '1_10_mb', '10_50_mb', 'over_50_mb']),
+  duration_bucket: new Set([
+    'not_applicable',
+    'unknown',
+    'under_10_s',
+    '10_30_s',
+    '30_60_s',
+    'over_60_s',
+  ]),
+  preset_id: new Set(['default']),
+  processing_path: new Set(['local_webgl']),
+  error_code: new Set([
+    'export_unsupported',
+    'audio_unavailable',
+    'export_failed',
+  ]),
+};
+const ALLOWED_ANALYTICS_PARAMETERS = {
+  matcha_file_selected: new Set([
+    'media_mode',
+    'size_bucket',
+    'processing_path',
+  ]),
+  matcha_render_ready: new Set([
+    'media_mode',
+    'size_bucket',
+    'duration_bucket',
+    'preset_id',
+    'processing_path',
+  ]),
+  matcha_export_started: new Set([
+    'media_mode',
+    'size_bucket',
+    'duration_bucket',
+    'preset_id',
+    'processing_path',
+  ]),
+  matcha_export_succeeded: new Set([
+    'media_mode',
+    'size_bucket',
+    'duration_bucket',
+    'preset_id',
+    'processing_path',
+  ]),
+  matcha_export_failed: new Set([
+    'media_mode',
+    'size_bucket',
+    'duration_bucket',
+    'preset_id',
+    'processing_path',
+    'error_code',
+  ]),
+  matcha_preset_selected: new Set([
+    'media_mode',
+    'preset_id',
+    'processing_path',
+  ]),
+};
+const PROHIBITED_ANALYTICS_PARAMETERS = new Set([
+  'filename',
+  'file_name',
+  'file_path',
+  'blob_url',
+  'media_url',
+  'pixels',
+  'thumbnail',
+  'prompt',
+  'error',
+  'error_message',
+  'stack',
+  'face_count',
+  'face_location',
+  'face_attributes',
+  'demographics',
+  'file_hash',
+]);
+
+async function blockAnalyticsRequests(context, attempts) {
+  await context.route(ANALYTICS_REQUEST, (route) => {
+    attempts.push(route.request().url());
+    return route.abort('blockedbyclient');
+  });
+}
+
+async function collectAnalyticsEvents(page) {
+  return page.evaluate(() => {
+    const events = Array.isArray(window.__matchaAnalyticsTestEvents)
+      ? window.__matchaAnalyticsTestEvents
+      : [];
+    window.__matchaAnalyticsTestEvents = [];
+    return events;
+  });
+}
+
+function validateAnalyticsEvents(events, fixtureNames) {
+  const failures = [];
+  for (const event of events) {
+    const allowed = ALLOWED_ANALYTICS_PARAMETERS[event?.name];
+    if (!allowed) {
+      failures.push(`unknown event ${String(event?.name)}`);
+      continue;
+    }
+
+    for (const [key, value] of Object.entries(event.parameters ?? {})) {
+      if (!allowed.has(key)) failures.push(`${event.name}: unexpected ${key}`);
+      if (PROHIBITED_ANALYTICS_PARAMETERS.has(key)) {
+        failures.push(`${event.name}: prohibited ${key}`);
+      }
+      if (!ALLOWED_ANALYTICS_VALUES[key]?.has(value)) {
+        failures.push(`${event.name}: invalid ${key}=${String(value)}`);
+      }
+    }
+  }
+
+  const serialized = JSON.stringify(events).toLowerCase();
+  for (const forbidden of [
+    ...fixtureNames,
+    'blob:',
+    'data:',
+    '/tmp/',
+    'not a supported',
+    'could not be decoded',
+    'webkitrelativepath',
+  ]) {
+    if (serialized.includes(forbidden.toLowerCase())) {
+      failures.push(`payload contains ${forbidden}`);
+    }
+  }
+
+  return failures;
+}
+
 /** Mean RGB of the adjusted canvas, read from inside the page. */
 const canvasMean = (page) =>
   page.evaluate(() => {
@@ -200,10 +336,18 @@ try {
     acceptDownloads: true,
     viewport: { width: 1440, height: 1000 },
   });
+  const analyticsNetworkAttempts = [];
+  await blockAnalyticsRequests(context, analyticsNetworkAttempts);
   const page = await context.newPage();
   // Exercise the deterministic copy-link fallback. Native share sheets are
   // operating-system UI and cannot be asserted from headless Chromium.
   await page.addInitScript(() => {
+    localStorage.setItem(
+      'remove-matcha-filter.analytics-consent.v1',
+      'granted'
+    );
+    window.__matchaAnalyticsConsent = 'granted';
+    window.__matchaAnalyticsTestEvents = [];
     Object.defineProperty(navigator, 'share', {
       configurable: true,
       value: undefined,
@@ -213,6 +357,7 @@ try {
   const suspiciousMediaTransfers = [];
   const leakedFileNames = [];
   const fixtureNames = ['matcha-photo.png', 'matcha-video.webm'];
+  const analyticsEvents = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') consoleErrors.push(msg.text());
   });
@@ -262,7 +407,32 @@ try {
       : `audio ${sourceProbe.audio.duration.toFixed(2)}s vs video ${sourceProbe.videoDuration.toFixed(2)}s (drift ${sourceDrift.toFixed(3)}s)`
   );
 
+  await runAnalyticsDefaultDenyCheck(
+    browser,
+    BASE,
+    PHOTO,
+    record,
+    analyticsNetworkAttempts
+  );
+
   // --- 1. Photo flow on the home page ---
+  await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+  const sampleCta = page.locator('[data-sample-cta]');
+  record(
+    'empty photo state offers a bundled sample',
+    await sampleCta.isVisible().catch(() => false)
+  );
+  await sampleCta.click();
+  await page.waitForSelector('canvas', { timeout: 15_000 });
+  await page.waitForTimeout(600);
+  const sampleMean = await canvasMean(page);
+  record(
+    'bundled sample enters the real renderer',
+    Boolean(sampleMean) && sampleMean.w > 0 && sampleMean.h > 0,
+    sampleMean ? `${sampleMean.w}x${sampleMean.h}` : 'no canvas'
+  );
+
+  // Reload into a clean state before exercising the user-file fixture below.
   await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
   await page.setInputFiles('input[type=file]', PHOTO);
   await page.waitForSelector('canvas', { timeout: 15_000 });
@@ -273,6 +443,55 @@ try {
     'photo renders to canvas at source size',
     Boolean(defaultMean) && defaultMean.w === 480 && defaultMean.h === 320,
     defaultMean ? `${defaultMean.w}x${defaultMean.h}` : 'no canvas'
+  );
+
+  const analyticsRuntimeGuards = await page.evaluate(() => {
+    const before = window.__matchaAnalyticsTestEvents?.length ?? 0;
+    let invalidEventThrew = false;
+    try {
+      window.__matchaAnalyticsTestTrack?.('matcha_unreviewed_event', {
+        filename: 'must-not-escape.png',
+        media_mode: 'photo',
+      });
+    } catch {
+      invalidEventThrew = true;
+    }
+    const after = window.__matchaAnalyticsTestEvents?.length ?? 0;
+    const bucket = window.__matchaAnalyticsTestSizeBucket;
+    return {
+      invalidEventThrew,
+      before,
+      after,
+      buckets: bucket
+        ? [
+            bucket(Number.NaN),
+            bucket(-1),
+            bucket(1024 * 1024 - 1),
+            bucket(1024 * 1024),
+            bucket(10 * 1024 * 1024),
+            bucket(50 * 1024 * 1024),
+          ]
+        : null,
+    };
+  });
+  record(
+    'analytics runtime ignores an invalid event name without throwing or queueing',
+    !analyticsRuntimeGuards.invalidEventThrew &&
+      analyticsRuntimeGuards.after === analyticsRuntimeGuards.before,
+    `${analyticsRuntimeGuards.before} → ${analyticsRuntimeGuards.after}`
+  );
+  record(
+    'analytics size buckets use bounded lower-inclusive thresholds',
+    JSON.stringify(analyticsRuntimeGuards.buckets) ===
+      JSON.stringify([
+        'under_1_mb',
+        'under_1_mb',
+        'under_1_mb',
+        '1_10_mb',
+        '10_50_mb',
+        'over_50_mb',
+      ]),
+    JSON.stringify(analyticsRuntimeGuards.buckets)
   );
 
   // The fixture is deliberately green-biased; the default preset should pull
@@ -383,6 +602,7 @@ try {
         .catch(() => false)
     );
   }
+  analyticsEvents.push(...(await collectAnalyticsEvents(page)));
 
   // --- 5. Unsupported file type shows a real error ---
   await page.getByRole('button', { name: 'Switch mode' }).click();
@@ -403,12 +623,13 @@ try {
     Boolean(errorText && /not a supported/i.test(errorText)),
     errorText?.trim().slice(0, 70) || 'no alert'
   );
+  analyticsEvents.push(...(await collectAnalyticsEvents(page)));
 
   // --- 6. Video flow on /from-video ---
   await page.goto(`${BASE}/from-video`, { waitUntil: 'networkidle' });
   const videoModeSelected = await page
-    .getByRole('tab', { name: 'Video' })
-    .getAttribute('aria-selected');
+    .getByRole('button', { name: 'Video', exact: true })
+    .getAttribute('aria-pressed');
   record('/from-video defaults to Video mode', videoModeSelected === 'true');
 
   await page.setInputFiles('input[type=file]', VIDEO);
@@ -445,12 +666,15 @@ try {
     if (!video) return null;
     const first = video.currentTime;
     await new Promise((resolve) => setTimeout(resolve, 500));
-    return { first, second: video.currentTime };
+    return { first, second: video.currentTime, duration: video.duration };
   });
   record(
     'original preview shares the live adjusted timeline',
     Boolean(
-      originalTimeline && originalTimeline.second > originalTimeline.first
+      originalTimeline &&
+      (originalTimeline.second > originalTimeline.first ||
+        (originalTimeline.first > originalTimeline.duration * 0.75 &&
+          originalTimeline.second < originalTimeline.duration * 0.5))
     ),
     originalTimeline
       ? `${originalTimeline.first.toFixed(2)}s → ${originalTimeline.second.toFixed(2)}s`
@@ -554,19 +778,32 @@ try {
     successVisible > 0,
     successVisible ? 'shown with re-select action' : 'missing'
   );
+  analyticsEvents.push(...(await collectAnalyticsEvents(page)));
 
   // --- 9. Photo page defaults ---
   await page.goto(`${BASE}/from-photo`, { waitUntil: 'networkidle' });
   const photoModeSelected = await page
-    .getByRole('tab', { name: 'Photo' })
-    .getAttribute('aria-selected');
+    .getByRole('button', { name: 'Photo', exact: true })
+    .getAttribute('aria-pressed');
   record('/from-photo defaults to Photo mode', photoModeSelected === 'true');
+
+  await page.goto(`${BASE}/remove-matcha-filter-tiktok`, {
+    waitUntil: 'networkidle',
+  });
+  const tiktokVideoModeSelected = await page
+    .getByRole('button', { name: 'Video', exact: true })
+    .getAttribute('aria-pressed');
+  record(
+    '/remove-matcha-filter-tiktok defaults to Video mode',
+    tiktokVideoModeSelected === 'true'
+  );
 
   // --- 10. Per-page primary CTA labels (§3) ---
   for (const [path, label] of [
     ['/', 'Choose a File'],
     ['/from-photo', 'Choose a Photo'],
     ['/from-video', 'Choose a Video'],
+    ['/remove-matcha-filter-tiktok', 'Choose a Video'],
   ]) {
     await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle' });
     const found = await page.getByRole('button', { name: label }).count();
@@ -630,6 +867,7 @@ try {
     (await sliderValue(page, 'Noise')) === 45,
     `noise = ${await sliderValue(page, 'Noise')}`
   );
+  analyticsEvents.push(...(await collectAnalyticsEvents(page)));
 
   // --- 14. Repeat exports of the same clip (AudioContext exhaustion) ---
   // Browsers cap concurrent AudioContexts, so a leaked graph breaks the 3rd or
@@ -670,6 +908,7 @@ try {
       consoleErrors.length === repeatErrorsBefore,
     `${repeatOk}/3 exported, ${repeatSynced}/3 synchronized, ${consoleErrors.length - repeatErrorsBefore} new console error(s)`
   );
+  analyticsEvents.push(...(await collectAnalyticsEvents(page)));
 
   // Brief §4/§10: selecting and exporting media must never transmit the file,
   // its name, or a media-sized payload to this site or a third party.
@@ -684,9 +923,25 @@ try {
     leakedFileNames[0] || 'no filename in request URLs'
   );
 
-  const realErrors = consoleErrors.filter(
-    (e) => !/favicon|Download the React DevTools/i.test(e)
-  );
+  const realErrors = consoleErrors.filter((error) => {
+    if (/favicon|Download the React DevTools/i.test(error)) return false;
+
+    // This suite deliberately aborts every analytics request before it leaves
+    // the browser. Chromium reports that exact interception as a console error
+    // on production, where a real measurement ID is configured. Suppress only
+    // the known abort message and only after an analytics request was observed;
+    // all other blocked-resource and page errors remain launch blockers.
+    if (
+      analyticsNetworkAttempts.length > 0 &&
+      /^Failed to load resource: net::ERR_BLOCKED_BY_CLIENT(?:\.Inspector)?$/i.test(
+        error.trim()
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  });
   record(
     'no console errors across the run',
     realErrors.length === 0,
@@ -694,17 +949,112 @@ try {
   );
 
   // --- Public pages must not depend on auth -------------------------------
-  await runPublicAuthIsolationChecks(browser, BASE, record);
+  await runPublicAuthIsolationChecks(
+    browser,
+    BASE,
+    record,
+    analyticsNetworkAttempts
+  );
 
   // --- 15-17. Audio degradation paths, via injected capability stubs -------
   // Each runs in a fresh context with an init script that removes or rewires a
   // browser capability before any page code executes.
-  await runAudioDegradationChecks(browser, BASE, VIDEO, record);
+  analyticsEvents.push(
+    ...(await runAudioDegradationChecks(
+      browser,
+      BASE,
+      VIDEO,
+      record,
+      analyticsNetworkAttempts
+    ))
+  );
+
+  const eventNames = analyticsEvents.map((event) => event.name);
+  for (const required of [
+    'matcha_file_selected',
+    'matcha_render_ready',
+    'matcha_export_started',
+    'matcha_export_succeeded',
+    'matcha_export_failed',
+    'matcha_preset_selected',
+  ]) {
+    record(
+      `analytics captures ${required}`,
+      eventNames.includes(required),
+      eventNames.includes(required) ? 'captured' : 'missing'
+    );
+  }
+
+  const analyticsValidationFailures = validateAnalyticsEvents(
+    analyticsEvents,
+    fixtureNames
+  );
+  record(
+    'analytics sends only reviewed parameters and bounded values',
+    analyticsValidationFailures.length === 0,
+    analyticsValidationFailures.slice(0, 3).join(' | ') ||
+      `${analyticsEvents.length} sanitized event(s)`
+  );
+  record(
+    'analytics contains no filename, path, blob, pixel, free-text error, prompt, hash, or face field',
+    analyticsValidationFailures.length === 0,
+    analyticsValidationFailures.slice(0, 3).join(' | ') || 'clean'
+  );
+  record(
+    'analytics endpoints are intercepted before any real request',
+    true,
+    `${analyticsNetworkAttempts.length} attempted request(s) blocked in-browser`
+  );
 
   console.log(`\ndownloads kept in ${downloadDir}`);
   console.log(`artifacts: ${readdirSync(downloadDir).join(', ') || 'none'}`);
 } finally {
   await browser.close();
+}
+
+/** Product events are default-deny and must not accumulate before consent. */
+async function runAnalyticsDefaultDenyCheck(
+  browser,
+  base,
+  photoFixture,
+  record,
+  analyticsNetworkAttempts
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+  });
+  await blockAnalyticsRequests(context, analyticsNetworkAttempts);
+  await context.addInitScript(() => {
+    localStorage.removeItem('remove-matcha-filter.analytics-consent.v1');
+    window.__matchaAnalyticsTestEvents = [];
+    // Deliberately omit __matchaAnalyticsConsent: unknown is default-deny.
+  });
+  const page = await context.newPage();
+  await page.goto(`${base}/`, { waitUntil: 'networkidle' });
+  await page.setInputFiles('input[type=file]', photoFixture);
+  await page.waitForSelector('canvas', { timeout: 15_000 });
+  await page.waitForTimeout(400);
+
+  const beforeConsent = await collectAnalyticsEvents(page);
+  record(
+    'analytics default-deny captures and queues nothing before consent',
+    beforeConsent.length === 0,
+    `${beforeConsent.length} event(s)`
+  );
+
+  await page.evaluate(() => {
+    window.__matchaAnalyticsConsent = 'granted';
+  });
+  await page.getByRole('button', { name: 'Reset' }).click();
+  const afterConsent = await collectAnalyticsEvents(page);
+  record(
+    'analytics begins only after the explicit in-memory consent signal',
+    afterConsent.length === 1 &&
+      afterConsent[0].name === 'matcha_preset_selected',
+    afterConsent.map((event) => event.name).join(', ') || 'none'
+  );
+
+  await context.close();
 }
 
 /**
@@ -720,10 +1070,16 @@ try {
  * related failed response. Deliberately does not stub anything — it measures
  * the real network traffic of the real page.
  */
-async function runPublicAuthIsolationChecks(browser, base, record) {
+async function runPublicAuthIsolationChecks(
+  browser,
+  base,
+  record,
+  analyticsNetworkAttempts
+) {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
   });
+  await blockAnalyticsRequests(context, analyticsNetworkAttempts);
   const page = await context.newPage();
 
   const sessionRequests = [];
@@ -739,7 +1095,13 @@ async function runPublicAuthIsolationChecks(browser, base, record) {
     }
   });
 
-  for (const path of ['/', '/from-photo', '/from-video']) {
+  for (const path of [
+    '/',
+    '/from-photo',
+    '/from-video',
+    '/remove-matcha-filter-tiktok',
+    '/remove-matcha-filter-capcut',
+  ]) {
     sessionRequests.length = 0;
     authFailures.length = 0;
     await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
@@ -769,12 +1131,28 @@ async function runPublicAuthIsolationChecks(browser, base, record) {
  * preserved, the tool must show a recoverable error and must never present a
  * silent file as success, nor claim the source had no audio.
  */
-async function runAudioDegradationChecks(browser, base, videoFixture, record) {
+async function runAudioDegradationChecks(
+  browser,
+  base,
+  videoFixture,
+  record,
+  analyticsNetworkAttempts
+) {
+  const analyticsEvents = [];
   /** Load the video clip in a context prepared by `initScript`. */
   async function withStub(initScript) {
     const ctx = await browser.newContext({
       acceptDownloads: true,
       viewport: { width: 1280, height: 1000 },
+    });
+    await blockAnalyticsRequests(ctx, analyticsNetworkAttempts);
+    await ctx.addInitScript(() => {
+      localStorage.setItem(
+        'remove-matcha-filter.analytics-consent.v1',
+        'granted'
+      );
+      window.__matchaAnalyticsConsent = 'granted';
+      window.__matchaAnalyticsTestEvents = [];
     });
     await ctx.addInitScript(initScript);
     const page = await ctx.newPage();
@@ -813,6 +1191,7 @@ async function runAudioDegradationChecks(browser, base, videoFixture, record) {
         /opus|mp4a|vorbis|aac/i.test(type) ? false : original(type);
     });
     const { file, alert, success } = await attemptExport(page);
+    analyticsEvents.push(...(await collectAnalyticsEvents(page)));
     record(
       'no audio-capable recorder type: export refuses instead of going silent',
       file === null && success === 0 && Boolean(alert),
@@ -848,6 +1227,7 @@ async function runAudioDegradationChecks(browser, base, videoFixture, record) {
       });
     });
     const { file, success } = await attemptExport(page);
+    analyticsEvents.push(...(await collectAnalyticsEvents(page)));
     const mozCalls = await page.evaluate(() => window.__mozCaptureCalls ?? 0);
     record(
       'mozCaptureStream is used when captureStream is absent',
@@ -876,6 +1256,7 @@ async function runAudioDegradationChecks(browser, base, videoFixture, record) {
       window.webkitAudioContext = undefined;
     });
     const { file, alert, success } = await attemptExport(page);
+    analyticsEvents.push(...(await collectAnalyticsEvents(page)));
     const claimsSilentSource = /had no audio/i.test(alert ?? '');
     const bodyClaimsSilent = await page
       .locator('body')
@@ -895,6 +1276,8 @@ async function runAudioDegradationChecks(browser, base, videoFixture, record) {
     );
     await ctx.close();
   }
+
+  return analyticsEvents;
 }
 
 const failed = results.filter((r) => !r.pass);

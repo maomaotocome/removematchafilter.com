@@ -110,6 +110,8 @@ const canonicalPaths = [
   '/from-video',
   '/matcha-filter-trend',
   '/how-to-remove-matcha-filter',
+  '/remove-matcha-filter-tiktok',
+  '/remove-matcha-filter-capcut',
   '/contact',
   '/privacy-policy',
   '/terms-of-service',
