@@ -14,6 +14,7 @@ export {
 export {
   fitWithin,
   formatBytes,
+  loadBundledPhotoSample,
   loadMedia,
   MAX_PHOTO_BYTES,
   MAX_VIDEO_BYTES,

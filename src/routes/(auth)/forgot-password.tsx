@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
@@ -20,11 +20,15 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldDescription, FieldGroup } from '@/components/ui/field';
 
-const forgotSchema = z.object({
-  email: z.string().email(m['common.sign.email_placeholder']()),
-});
-
 function ForgotPasswordPage() {
+  const forgotSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(m['common.sign.email_placeholder']()),
+      }),
+    []
+  );
+
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState('');

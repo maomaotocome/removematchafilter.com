@@ -28,7 +28,7 @@ import { FaqList } from '@/components/matcha/faq-list';
 import { LinkCards } from '@/components/matcha/link-cards';
 
 const PUBLISHED_AT = '2026-08-09';
-const MODIFIED_AT = '2026-08-15';
+const MODIFIED_AT = '2026-08-22';
 
 function guideSteps(locale?: ReturnType<typeof getLocale>) {
   const o = { locale };
@@ -87,6 +87,20 @@ function HowToRemoveMatchaFilterPage() {
           ]}
         />
 
+        <ArticleSection
+          title={m['guide.before_title']()}
+          paragraphs={[m['guide.before_body_1'](), m['guide.before_body_2']()]}
+        >
+          <NoteCallout
+            title={m['guide.note_title']()}
+            body={m['guide.note_body']()}
+          />
+        </ArticleSection>
+
+        <ArticleSection title={m['guide.steps_title']()} tone="muted">
+          <GuideSteps steps={guideSteps()} />
+        </ArticleSection>
+
         <LinkCards
           title={m['home.related_title']()}
           cards={[
@@ -104,20 +118,6 @@ function HowToRemoveMatchaFilterPage() {
             },
           ]}
         />
-
-        <ArticleSection
-          title={m['guide.before_title']()}
-          paragraphs={[m['guide.before_body_1'](), m['guide.before_body_2']()]}
-        >
-          <NoteCallout
-            title={m['guide.note_title']()}
-            body={m['guide.note_body']()}
-          />
-        </ArticleSection>
-
-        <ArticleSection title={m['guide.steps_title']()} tone="muted">
-          <GuideSteps steps={guideSteps()} />
-        </ArticleSection>
 
         <ArticleSection title={m['guide.format_title']()}>
           <FactGrid
@@ -141,6 +141,24 @@ function HowToRemoveMatchaFilterPage() {
             ]}
           />
         </ArticleSection>
+
+        <LinkCards
+          title={m['platforms.title']()}
+          cards={[
+            {
+              href: '/remove-matcha-filter-tiktok',
+              title: m['platform.tiktok_card_title'](),
+              body: m['platform.tiktok_card_body'](),
+              cta: m['platform.tiktok_card_cta'](),
+            },
+            {
+              href: '/remove-matcha-filter-capcut',
+              title: m['platform.capcut_card_title'](),
+              body: m['platform.capcut_card_body'](),
+              cta: m['platform.capcut_card_cta'](),
+            },
+          ]}
+        />
 
         <ArticleSection title={m['guide.problems_title']()} tone="muted">
           <ExplainedList

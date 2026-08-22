@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   Download,
+  ImageIcon,
   Loader2,
   RotateCcw,
   Share2,
@@ -12,6 +13,14 @@ import {
 } from 'lucide-react';
 
 import { Link } from '@/core/i18n/navigation';
+import {
+  durationBucketForMedia,
+  sizeBucketForBytes,
+  trackMatchaEvent,
+  type MatchaDurationBucket,
+  type MatchaErrorCode,
+  type MatchaSizeBucket,
+} from '@/lib/analytics/matcha-events';
 import {
   analyzeFrame,
   clampParams,
@@ -22,6 +31,7 @@ import {
   fitWithin,
   getSourceAudioTrack,
   isVideoExportSupported,
+  loadBundledPhotoSample,
   loadMedia,
   MatchaRenderer,
   MediaLoadError,
@@ -44,6 +54,31 @@ import { MediaDropZone } from '@/components/matcha/media-drop-zone';
 const MAX_PHOTO_EDGE = 4096;
 const MAX_VIDEO_EDGE = 1920;
 const RECORD_FPS = 30;
+
+interface MatchaAnalyticsContext {
+  media_mode: MediaMode;
+  size_bucket: MatchaSizeBucket;
+  duration_bucket: MatchaDurationBucket;
+  preset_id: 'default';
+  processing_path: 'local_webgl';
+}
+
+class AnalyticsCodedExportError extends ExportUnsupportedError {
+  readonly analyticsCode: MatchaErrorCode;
+
+  constructor(analyticsCode: MatchaErrorCode, message: string) {
+    super(message);
+    this.name = 'AnalyticsCodedExportError';
+    this.analyticsCode = analyticsCode;
+  }
+}
+
+type VideoFrameElement = HTMLVideoElement & {
+  requestVideoFrameCallback?: (
+    callback: (now: number, metadata: unknown) => void
+  ) => number;
+  cancelVideoFrameCallback?: (handle: number) => void;
+};
 
 /** Wait for an actual seek before starting capture; assigning currentTime is async. */
 async function seekToStart(video: HTMLVideoElement): Promise<void> {
@@ -116,6 +151,8 @@ export interface MatchaToolCopy {
   webglUnsupported: string;
   videoExportUnsupported: string;
   loading: string;
+  samplePhoto: string;
+  sampleError: string;
   /** Primary CTA on the empty state — differs per page (§3). */
   chooseFile: string;
   processingPhoto: string;
@@ -160,7 +197,10 @@ export function MatchaTool({
   const originalVideoHostRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MatchaRenderer | null>(null);
   const frameRef = useRef<number | null>(null);
+  const frameKindRef = useRef<'animation' | 'video' | null>(null);
   const mediaRef = useRef<SourceMedia | null>(null);
+  const renderReadyMediaRef = useRef<SourceMedia | null>(null);
+  const analyticsContextRef = useRef<MatchaAnalyticsContext | null>(null);
   // Latest params/stats read inside the rAF loop without restarting it.
   const paramsRef = useRef(params);
   const statsRef = useRef<SourceStats | null>(null);
@@ -200,8 +240,14 @@ export function MatchaTool({
       rendererRef.current = new MatchaRenderer(canvasRef.current);
       setGlSupported(true);
       drawOnce();
+      if (renderReadyMediaRef.current !== media) {
+        const context = analyticsContextRef.current;
+        if (context) trackMatchaEvent('matcha_render_ready', context);
+        renderReadyMediaRef.current = media;
+      }
     } catch (thrown) {
       rendererRef.current = null;
+      renderReadyMediaRef.current = null;
       setGlSupported(false);
       setError(
         thrown instanceof WebGLUnavailableError
@@ -230,7 +276,9 @@ export function MatchaTool({
     };
   }, [media, copy.original]);
 
-  // Video: continuous render loop. Photo: single draw per param change.
+  // Video: redraw only when the decoder produces a new frame. Pause, ended
+  // and hidden states do no GPU work. Browsers without the video-frame API use
+  // requestAnimationFrame, still gated by real playback state.
   useEffect(() => {
     if (!media || !rendererRef.current) return;
 
@@ -239,31 +287,97 @@ export function MatchaTool({
       return;
     }
 
-    const video = media.element as HTMLVideoElement;
+    const video = media.element as VideoFrameElement;
     let cancelled = false;
 
-    const loop = () => {
-      if (cancelled) return;
-      drawOnce();
-      frameRef.current = requestAnimationFrame(loop);
+    const cancelScheduledFrame = () => {
+      if (frameRef.current === null) return;
+      if (frameKindRef.current === 'video' && video.cancelVideoFrameCallback) {
+        video.cancelVideoFrameCallback(frameRef.current);
+      } else {
+        cancelAnimationFrame(frameRef.current);
+      }
+      frameRef.current = null;
+      frameKindRef.current = null;
     };
-    frameRef.current = requestAnimationFrame(loop);
+
+    const scheduleFrame = () => {
+      if (cancelled || video.paused || video.ended || document.hidden) return;
+
+      if (video.requestVideoFrameCallback) {
+        frameKindRef.current = 'video';
+        frameRef.current = video.requestVideoFrameCallback(() => {
+          frameRef.current = null;
+          frameKindRef.current = null;
+          if (cancelled) return;
+          drawOnce();
+          scheduleFrame();
+        });
+        return;
+      }
+
+      frameKindRef.current = 'animation';
+      frameRef.current = requestAnimationFrame(() => {
+        frameRef.current = null;
+        frameKindRef.current = null;
+        if (cancelled) return;
+        drawOnce();
+        scheduleFrame();
+      });
+    };
+
+    const start = () => {
+      cancelScheduledFrame();
+      drawOnce();
+      scheduleFrame();
+    };
+
+    const stop = () => {
+      cancelScheduledFrame();
+      drawOnce();
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) cancelScheduledFrame();
+      else if (!video.paused && !video.ended) start();
+      else drawOnce();
+    };
+
+    video.addEventListener('play', start);
+    video.addEventListener('pause', stop);
+    video.addEventListener('ended', stop);
+    video.addEventListener('seeked', drawOnce);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    drawOnce();
     void video.play().catch(() => {
-      // Autoplay refusal is fine — the loop still renders the current frame
-      // and the user can press play on the visible controls.
+      // Autoplay refusal is fine — the current frame is already rendered and
+      // the visible source controls let the user start playback.
     });
 
     return () => {
       cancelled = true;
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
+      cancelScheduledFrame();
+      video.removeEventListener('play', start);
+      video.removeEventListener('pause', stop);
+      video.removeEventListener('ended', stop);
+      video.removeEventListener('seeked', drawOnce);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [media, drawOnce, params]);
+  }, [media, drawOnce]);
+
+  // Photos always redraw on a control change. A paused video redraws once so
+  // slider changes remain visible without restarting a continuous loop.
+  useEffect(() => {
+    if (!media || !rendererRef.current) return;
+    if (media.mode === 'photo' || (media.element as HTMLVideoElement).paused) {
+      drawOnce();
+    }
+  }, [media, params, drawOnce]);
 
   // Tear down GL + object URLs on unmount.
   useEffect(() => {
     return () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
       rendererRef.current?.dispose();
       rendererRef.current = null;
       const current = mediaRef.current;
@@ -278,13 +392,20 @@ export function MatchaTool({
     async (file: File) => {
       setError(null);
       setLoading(true);
+      const detected = modeForFile(file);
+      const sizeBucket = sizeBucketForBytes(file.size);
+      trackMatchaEvent('matcha_file_selected', {
+        media_mode: detected ?? 'unknown',
+        size_bucket: sizeBucket,
+        processing_path: 'local_webgl',
+      });
       try {
-        const detected = modeForFile(file);
         const next = await loadMedia(file);
 
         // Replacing media invalidates the GL context sizing/state; rebuild it.
         rendererRef.current?.dispose();
         rendererRef.current = null;
+        renderReadyMediaRef.current = null;
         const previous = mediaRef.current;
         if (previous) {
           // Close any Web Audio graph bound to the outgoing element before
@@ -294,11 +415,20 @@ export function MatchaTool({
         }
 
         if (detected && detected !== mode) setMode(detected);
+        analyticsContextRef.current = {
+          media_mode: next.mode,
+          size_bucket: sizeBucket,
+          duration_bucket: durationBucketForMedia(next.mode, next.duration),
+          preset_id: 'default',
+          processing_path: 'local_webgl',
+        };
         setStats(analyzeFrame(next.element));
         setParams(DEFAULT_PRESET);
         setSucceeded(false);
         setMedia(next);
       } catch (thrown) {
+        analyticsContextRef.current = null;
+        renderReadyMediaRef.current = null;
         setMedia(null);
         setStats(null);
         setError(
@@ -313,6 +443,21 @@ export function MatchaTool({
     [mode]
   );
 
+  const handleSamplePhoto = useCallback(async () => {
+    if (loading || exporting || mode !== 'photo') return;
+    setError(null);
+    setLoading(true);
+    try {
+      const sample = await loadBundledPhotoSample(
+        '/imgs/examples/photo-portrait-before.jpg'
+      );
+      await handleFile(sample);
+    } catch {
+      setLoading(false);
+      setError(copy.sampleError);
+    }
+  }, [copy.sampleError, exporting, handleFile, loading, mode]);
+
   function handleModeChange(next: MediaMode) {
     if (exporting || next === mode) return;
     setMode(next);
@@ -320,6 +465,8 @@ export function MatchaTool({
     if (media && media.mode !== next) {
       rendererRef.current?.dispose();
       rendererRef.current = null;
+      renderReadyMediaRef.current = null;
+      analyticsContextRef.current = null;
       releaseSourceAudio(media.element as HTMLMediaElement);
       URL.revokeObjectURL(media.url);
       setMedia(null);
@@ -332,6 +479,8 @@ export function MatchaTool({
     const current = mediaRef.current;
     rendererRef.current?.dispose();
     rendererRef.current = null;
+    renderReadyMediaRef.current = null;
+    analyticsContextRef.current = null;
     if (current) {
       releaseSourceAudio(current.element as HTMLMediaElement);
       URL.revokeObjectURL(current.url);
@@ -347,6 +496,11 @@ export function MatchaTool({
   function handleReset() {
     setParams(DEFAULT_PRESET);
     setSucceeded(false);
+    trackMatchaEvent('matcha_preset_selected', {
+      media_mode: analyticsContextRef.current?.media_mode ?? mode,
+      preset_id: 'default',
+      processing_path: 'local_webgl',
+    });
   }
 
   async function handleExport() {
@@ -357,6 +511,10 @@ export function MatchaTool({
     setError(null);
     setSucceeded(false);
     setExporting(true);
+    const analyticsContext = analyticsContextRef.current;
+    if (analyticsContext) {
+      trackMatchaEvent('matcha_export_started', analyticsContext);
+    }
 
     try {
       if (source.mode === 'photo') {
@@ -366,7 +524,22 @@ export function MatchaTool({
         await recordVideo(canvas, source);
       }
       setSucceeded(true);
+      if (analyticsContext) {
+        trackMatchaEvent('matcha_export_succeeded', analyticsContext);
+      }
     } catch (thrown) {
+      if (analyticsContext) {
+        const errorCode: MatchaErrorCode =
+          thrown instanceof AnalyticsCodedExportError
+            ? thrown.analyticsCode
+            : thrown instanceof ExportUnsupportedError
+              ? 'export_unsupported'
+              : 'export_failed';
+        trackMatchaEvent('matcha_export_failed', {
+          ...analyticsContext,
+          error_code: errorCode,
+        });
+      }
       setError(messageOf(thrown, 'Export failed.'));
     } finally {
       setExporting(false);
@@ -429,7 +602,10 @@ export function MatchaTool({
     // the file has no audio, so refuse rather than hand over a silent export.
     if (audio.status === 'unavailable') {
       video.loop = wasLooping;
-      throw new ExportUnsupportedError(copy.audioUnavailable);
+      throw new AnalyticsCodedExportError(
+        'audio_unavailable',
+        copy.audioUnavailable
+      );
     }
 
     // Unmute for the duration: a muted element yields a silent track.
@@ -489,7 +665,7 @@ export function MatchaTool({
   return (
     <div className={cn('space-y-5', className)}>
       <div
-        role="tablist"
+        role="group"
         aria-label={`${copy.modePhoto} / ${copy.modeVideo}`}
         className="bg-muted inline-flex rounded-full p-1"
       >
@@ -497,12 +673,11 @@ export function MatchaTool({
           <button
             key={value}
             type="button"
-            role="tab"
-            aria-selected={mode === value}
+            aria-pressed={mode === value}
             disabled={exporting}
             onClick={() => handleModeChange(value)}
             className={cn(
-              'rounded-full px-5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+              'min-h-11 rounded-full px-5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
               mode === value
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -584,7 +759,7 @@ export function MatchaTool({
           <div className="flex flex-wrap gap-2">
             <Link
               href="/how-to-remove-matcha-filter"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors"
             >
               <BookOpen className="size-4" />
               {copy.guideLabel}
@@ -592,7 +767,7 @@ export function MatchaTool({
             <button
               type="button"
               onClick={handleShare}
-              className="border-border hover:bg-accent inline-flex min-h-10 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors"
+              className="border-border hover:bg-accent inline-flex min-h-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors"
             >
               {shareCopied ? (
                 <Check className="size-4" />
@@ -604,7 +779,7 @@ export function MatchaTool({
             <button
               type="button"
               onClick={handleChooseAnother}
-              className="border-border hover:bg-accent inline-flex min-h-10 items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors"
+              className="border-border hover:bg-accent inline-flex min-h-11 items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors"
             >
               {copy.chooseAnother}
             </button>
@@ -614,25 +789,49 @@ export function MatchaTool({
 
       {!hasMedia ? (
         loading ? (
-          <div className="border-border text-muted-foreground flex items-center justify-center gap-3 rounded-2xl border border-dashed py-20 text-sm">
+          <div
+            role="status"
+            aria-live="polite"
+            className="border-border text-muted-foreground flex items-center justify-center gap-3 rounded-2xl border border-dashed py-20 text-sm"
+          >
             <Loader2 className="size-4 animate-spin" />
             {copy.loading}
           </div>
         ) : (
-          <MediaDropZone
-            mode={mode}
-            accept={accept}
-            title={mode === 'video' ? copy.dropVideoTitle : copy.dropPhotoTitle}
-            description={
-              mode === 'video'
-                ? copy.dropVideoDescription
-                : copy.dropPhotoDescription
-            }
-            browseLabel={copy.chooseFile}
-            privacyNote={copy.privacyNote}
-            onFile={handleFile}
-            disabled={loading}
-          />
+          <div className="space-y-3">
+            <MediaDropZone
+              mode={mode}
+              accept={accept}
+              title={
+                mode === 'video' ? copy.dropVideoTitle : copy.dropPhotoTitle
+              }
+              description={
+                mode === 'video'
+                  ? copy.dropVideoDescription
+                  : copy.dropPhotoDescription
+              }
+              browseLabel={copy.chooseFile}
+              privacyNote={copy.privacyNote}
+              onFile={handleFile}
+              disabled={loading}
+            />
+            {mode === 'photo' && (
+              <div className="flex items-center justify-center gap-3">
+                <span aria-hidden="true" className="bg-border h-px w-8" />
+                <button
+                  type="button"
+                  data-sample-cta
+                  onClick={handleSamplePhoto}
+                  disabled={loading || exporting}
+                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium underline decoration-current/35 underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <ImageIcon className="size-4" aria-hidden="true" />
+                  {copy.samplePhoto}
+                </button>
+                <span aria-hidden="true" className="bg-border h-px w-8" />
+              </div>
+            )}
+          </div>
         )
       ) : (
         <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">

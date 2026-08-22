@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 import { envConfigs } from '@/config';
 import { m } from '@/paraglide/messages.js';
@@ -10,6 +10,9 @@ import { formatPostDate } from '@/content/posts';
 import { getBlogPostsFn } from '@/content/posts/server';
 
 export const Route = createFileRoute('/blog/')({
+  beforeLoad: () => {
+    throw redirect({ to: '/', replace: true });
+  },
   loader: async () => {
     const locale = getLocale();
     const posts = await getBlogPostsFn({ data: { locale } });
@@ -28,6 +31,7 @@ export const Route = createFileRoute('/blog/')({
           name: 'description',
           content: m['blog.description']({}, { locale: locale as any }),
         },
+        { name: 'robots', content: 'noindex, follow' },
       ],
       links: [
         { rel: 'canonical', href: urlFor(locale ?? 'en') },

@@ -44,7 +44,7 @@ export function organizationSchema() {
     '@id': `${origin()}/#organization`,
     name: envConfigs.app_name,
     url: `${origin()}/`,
-    logo: `${origin()}/logo.svg`,
+    logo: `${origin()}/logo-512.png`,
     sameAs: [OFFICIAL_REPOSITORY_URL],
     member: { '@id': `${origin()}/#jared` },
     ...(contactEmail
@@ -90,6 +90,7 @@ export function websiteSchema() {
     '@type': 'WebSite',
     '@id': `${origin()}/#website`,
     name: envConfigs.app_name,
+    alternateName: 'removematchafilter.com',
     url: `${origin()}/`,
     publisher: { '@id': `${origin()}/#organization` },
     inLanguage: ['en', 'zh'],
@@ -101,8 +102,8 @@ export function webPageSchema({
   name,
   description,
   locale = baseLocale,
-  datePublished = SITE_PUBLISHED_AT,
-  dateModified = SITE_REVIEWED_AT,
+  datePublished,
+  dateModified,
 }: {
   path: string;
   name: string;
@@ -121,8 +122,8 @@ export function webPageSchema({
     name,
     description,
     inLanguage: locale,
-    datePublished,
-    dateModified,
+    ...(datePublished ? { datePublished } : {}),
+    ...(dateModified ? { dateModified } : {}),
     isPartOf: { '@id': `${origin()}/#website` },
     about: { '@id': `${origin()}/#webapp` },
     mainEntity: { '@id': `${origin()}/#webapp` },

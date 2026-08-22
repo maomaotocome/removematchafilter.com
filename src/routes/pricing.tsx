@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 import { m } from '@/paraglide/messages.js';
 import { getLocale } from '@/paraglide/runtime.js';
@@ -7,6 +7,9 @@ import { Header } from '@/blocks/header';
 import { Pricing } from '@/blocks/pricing';
 
 export const Route = createFileRoute('/pricing')({
+  beforeLoad: () => {
+    throw redirect({ to: '/', replace: true });
+  },
   loader: () => {
     const locale = getLocale();
     return {
@@ -19,8 +22,9 @@ export const Route = createFileRoute('/pricing')({
       ? [
           { title: loaderData.title },
           { name: 'description', content: loaderData.description },
+          { name: 'robots', content: 'noindex, follow' },
         ]
-      : [],
+      : [{ name: 'robots', content: 'noindex, follow' }],
   }),
   component: PricingPage,
 });

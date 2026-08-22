@@ -17,6 +17,29 @@ export class MediaLoadError extends Error {
   }
 }
 
+/**
+ * Turn a bundled demo fixture into the same File input used for visitor media.
+ * The response stays in this browser tab and then follows the normal renderer
+ * path, so the sample is a real product trial rather than a separate preview.
+ */
+export async function loadBundledPhotoSample(url: string): Promise<File> {
+  const response = await fetch(url, { cache: 'force-cache' });
+  if (!response.ok) {
+    throw new MediaLoadError('The bundled sample image could not be loaded.');
+  }
+
+  const blob = await response.blob();
+  const type = blob.type || 'image/jpeg';
+  if (!PHOTO_TYPES.has(type)) {
+    throw new MediaLoadError('The bundled sample is not a supported image.');
+  }
+
+  return new File([blob], 'sample-photo.jpg', {
+    type,
+    lastModified: 0,
+  });
+}
+
 export function modeForFile(file: File): MediaMode | null {
   if (PHOTO_TYPES.has(file.type)) return 'photo';
   if (VIDEO_TYPES.has(file.type)) return 'video';
@@ -71,7 +94,9 @@ export async function loadMedia(file: File): Promise<SourceMedia> {
 function loadPhoto(url: string, fileName: string): Promise<SourceMedia> {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    image.decoding = 'sync';
+    // Large phone photos can otherwise block the main thread while decoding.
+    // The load promise still resolves only when dimensions and pixels are ready.
+    image.decoding = 'async';
     image.onload = () => {
       if (!image.naturalWidth || !image.naturalHeight) {
         reject(new MediaLoadError('That image could not be decoded.'));
